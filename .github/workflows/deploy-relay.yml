@@ -1,0 +1,33 @@
+name: Deploy MixPre relay (Cloudflare)
+
+# Runs when relay/ changes, or manually from the Actions tab.
+# Needs two repo secrets (Settings > Secrets and variables > Actions):
+#   CLOUDFLARE_API_TOKEN   - token with "Edit Cloudflare Workers" permission
+#   CLOUDFLARE_ACCOUNT_ID  - your Cloudflare account ID
+# and (recommended) MIXPRE_ACCESS_KEY - a password only you know; the control
+#   page asks for it once per browser before showing/controlling your Pis
+# Optional, for Send/Listen audio on any network (cellular etc.):
+#   CF_TURN_KEY_ID, CF_TURN_API_TOKEN - from Cloudflare dashboard > Realtime > TURN
+on:
+  workflow_dispatch:
+  push:
+    paths: ['relay/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: relay
+          secrets: |
+            ACCESS_KEY
+            TURN_KEY_ID
+            TURN_KEY_API_TOKEN
+        env:
+          ACCESS_KEY: ${{ secrets.MIXPRE_ACCESS_KEY }}
+          TURN_KEY_ID: ${{ secrets.CF_TURN_KEY_ID }}
+          TURN_KEY_API_TOKEN: ${{ secrets.CF_TURN_API_TOKEN }}
