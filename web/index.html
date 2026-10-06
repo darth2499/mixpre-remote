@@ -1,0 +1,1644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MixPre Remote</title>
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Crect x='7' y='8' width='3' height='16' rx='1.5' fill='%23fff'/%3E%3Crect x='14.5' y='12' width='3' height='12' rx='1.5' fill='%23fff'/%3E%3Crect x='22' y='6' width='3' height='18' rx='1.5' fill='%23ff3b30'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f5f5f7; --panel:#ffffff; --panel2:#f0f0f3; --text:#1d1d1f; --muted:#6e6e73; --line:rgba(0,0,0,.08);
+  --accent:#0071e3; --red:#ff3b30; --green:#34c759; --yellow:#ffcc00; --orange:#ff9500;
+  --btn:#e8e8ed; --btnText:#1d1d1f; --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+  --radius:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#000; --panel:#1c1c1e; --panel2:#2c2c2e; --text:#f5f5f7; --muted:#98989d; --line:rgba(255,255,255,.1);
+    --btn:#2c2c2e; --btnText:#f5f5f7; --shadow:none; --accent:#0a84ff; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));
+  background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+.brand{font-weight:600;font-size:17px;letter-spacing:-.01em;margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:99px;background:var(--panel2);color:var(--muted);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#8e8e93}
+.pill.ok .dot{background:var(--green)} .pill.warn .dot{background:var(--orange)} .pill.bad .dot{background:var(--red)}
+.iconbtn{border:0;background:var(--btn);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer}
+.iconbtn svg{width:18px;height:18px}
+
+main{max-width:1180px;margin:0 auto;padding:16px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+
+/* connect screen */
+.connect{min-height:calc(100vh - 120px);display:grid;place-items:center}
+.connect .card{max-width:440px;width:100%;text-align:center;background:var(--panel);border-radius:24px;padding:36px 28px;box-shadow:var(--shadow)}
+.connect h1{font-size:28px;letter-spacing:-.02em;margin:14px 0 6px}
+.connect p{color:var(--muted);margin:0 0 22px}
+.logo{width:64px;height:64px;margin:0 auto;border-radius:16px;background:#111;display:grid;place-items:center}
+.primary{border:0;background:var(--accent);color:#fff;font-weight:600;font-size:17px;padding:14px 22px;border-radius:14px;width:100%;cursor:pointer}
+.primary:active{transform:scale(.98)}
+.primary:disabled{opacity:.5}
+.hint{font-size:13px;color:var(--muted);margin-top:16px}
+.hint b{color:var(--text)}
+.searching{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:16px;margin:4px 0 18px}
+.spin{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.secondary{display:block;border:0;background:var(--btn);color:var(--btnText);font-weight:600;font-size:15px;padding:13px 18px;border-radius:12px;width:100%;cursor:pointer;text-decoration:none;text-align:center}
+a.primary{display:block;text-decoration:none;text-align:center}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:18px 0;text-transform:uppercase;letter-spacing:.06em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.codeform{display:flex;gap:8px}
+.codeform input{text-transform:uppercase;letter-spacing:.08em;text-align:center;font-weight:600}
+.codeform .b{flex:0 0 auto;padding:0 18px}
+.small{font-size:12px;color:var(--muted)}
+.nonet{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:12px;padding:12px;font-size:14px;margin-top:12px;text-align:left}
+.nonet a{font-weight:600;color:var(--accent)}
+.codeval{font:600 20px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
+.netlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.netrow{background:var(--panel2);border-radius:10px;padding:10px 12px}
+.netrow .top{display:flex;align-items:center;gap:8px;cursor:pointer}
+.netrow .top .nm{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.netrow .meta{font-size:12px;color:var(--muted)}
+.netrow form{display:flex;gap:8px;margin-top:8px}
+.netrow .b{min-height:36px;padding:6px 12px;font-size:13px}
+.wifistatus{font-size:14px;margin:4px 0 8px}
+.pilist{display:flex;flex-direction:column;gap:8px;text-align:left}
+.pi{display:flex;align-items:center;gap:12px;border:0;width:100%;background:var(--panel2);border-radius:14px;padding:12px 14px;cursor:pointer;text-align:left;color:var(--text)}
+.pi:active{transform:scale(.99)}
+.pi .ic{width:36px;height:36px;border-radius:10px;background:#111;display:grid;place-items:center;flex:0 0 auto}
+.pi .tx{flex:1;min-width:0}
+.pi .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi .sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi .badge{font-size:11px;font-weight:600;color:var(--green);margin-right:6px}
+.pi .chev{color:var(--muted);font-size:20px}
+.pi.last{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.ver{margin-top:20px;font-size:11px;color:var(--muted);user-select:none;-webkit-user-select:none;cursor:default}
+.recglow{position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .35s ease;
+  box-shadow:inset 0 0 0 5px rgba(255,59,48,.95), inset 0 0 40px 12px rgba(255,59,48,.55), inset 0 0 150px 40px rgba(255,59,48,.18)}
+body.recording .recglow{opacity:1;animation:recpulse 2.4s ease-in-out infinite}
+@keyframes recpulse{0%,100%{opacity:1}50%{opacity:.72}}
+.pill.rec{background:var(--red);color:#fff}
+.pill.rec .dot{background:#fff;animation:recblink 1.2s steps(2,start) infinite}
+@keyframes recblink{to{visibility:hidden}}
+@media (prefers-reduced-motion: reduce){body.recording .recglow,.pill.rec .dot{animation:none}}
+.meter{display:block;width:100%;height:38px;margin:8px 0 2px;border-radius:8px;background:#0b0b0c}
+.meterscale{position:relative;height:12px;font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);margin-bottom:8px}
+.meterscale span{position:absolute;top:0;transform:translateX(-50%)}
+.meterscale span:first-child{transform:none}
+.meterscale span:last-child{transform:translateX(-100%)}
+.audiorow{display:flex;gap:8px;align-items:center;margin-top:8px}
+.audiorow select{flex:1;min-width:0}
+.audiorow input[type=range]{flex:1}
+.b.on{background:var(--accent);color:#fff}
+.b.sending{background:var(--red);color:#fff}
+.pill.audio{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--text);cursor:pointer;border:0}
+.warnbox{background:color-mix(in srgb,var(--orange) 14%,transparent);color:var(--text);border-radius:12px;padding:10px 12px;font-size:13px;text-align:left;margin-bottom:16px}
+
+/* panels */
+.panel{background:var(--panel);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:14px}
+.panel-head{display:flex;align-items:baseline;gap:10px;margin:0 2px 12px}
+.panel-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;font-weight:600}
+.panel-head .note{font-size:12px;color:var(--muted);margin-left:auto;text-align:right}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+.disabled-area{opacity:.35;pointer-events:none}
+
+.b{border:0;background:var(--btn);color:var(--btnText);border-radius:12px;padding:10px 12px;font-weight:500;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;min-height:44px;transition:transform .06s, background .15s}
+.b:active,.b.pressed{transform:scale(.96);filter:brightness(.92)}
+.b small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.b.confirm{background:var(--orange);color:#fff}
+
+/* transport */
+.transport-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.tbtn{height:64px;display:grid;place-items:center;font-size:12px}
+.tbtn svg{width:26px;height:26px}
+.tbtn.rec svg{color:var(--red)}
+.tbtn.rec.on{background:var(--red);color:#fff} .tbtn.rec.on svg{color:#fff}
+.tbtn.play.on{background:var(--green);color:#fff}
+@media (max-width:520px){.transport-row{grid-template-columns:repeat(3,1fr)}}
+
+/* channel strips */
+.strips{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
+.strip{flex:1 0 92px;max-width:130px;background:var(--panel2);border-radius:14px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;scroll-snap-align:start}
+.strip .num{font-weight:700;font-size:15px}
+.strip .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.smr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;width:100%}
+.smr .b{padding:0;min-height:36px;font-size:13px;font-weight:700;border-radius:9px;background:var(--panel)}
+.smr .b.s.on{background:var(--yellow);color:#000}
+.smr .b.m.on{background:var(--orange);color:#fff}
+.smr .b.r.on{background:var(--red);color:#fff}
+.strip .open{width:100%;min-height:32px;padding:4px;font-size:12px;background:var(--panel)}
+
+.slider{position:relative;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.slider.v{width:44px;height:200px}
+.slider.h{width:100%;height:30px}
+.slider .track{position:absolute;background:var(--line);border-radius:4px}
+.slider.v .track{left:50%;width:6px;margin-left:-3px;top:10px;bottom:10px}
+.slider.h .track{top:50%;height:6px;margin-top:-3px;left:10px;right:10px}
+.slider .fill{position:absolute;background:var(--accent);border-radius:4px}
+.slider.v .fill{left:50%;width:6px;margin-left:-3px;bottom:10px}
+.slider.h .fill{top:50%;height:6px;margin-top:-3px;left:10px}
+.slider .thumb{position:absolute;background:#fff;border-radius:7px;box-shadow:0 1px 4px rgba(0,0,0,.35),0 0 0 .5px rgba(0,0,0,.1)}
+.slider.v .thumb{left:50%;width:40px;height:20px;margin-left:-20px;margin-top:-10px}
+.slider.h .thumb{top:50%;width:20px;height:20px;margin-top:-10px;margin-left:-10px;border-radius:50%}
+.slider .thumb::after{content:"";position:absolute;inset:9px 6px;background:var(--muted);border-radius:1px}
+.slider.h .thumb::after{display:none}
+.slider.unknown .thumb{background:transparent;border:2px dashed var(--muted);box-shadow:none}
+.slider.unknown .fill{opacity:0}
+.slider:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
+.val{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-height:15px}
+
+.kbrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.kbrow .tag{font-size:12px;color:var(--muted);margin-right:4px}
+
+/* nav */
+.navwrap{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+@media (max-width:460px){.navwrap{grid-template-columns:1fr}}
+.dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:6px;justify-content:center}
+.dpad .b{padding:0;border-radius:14px;display:grid;place-items:center}
+.dpad .b svg{width:20px;height:20px}
+.dpad .enter{background:var(--accent);color:#fff;font-size:13px;font-weight:600}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.quad .b{font-weight:700}
+.sublabel{font-size:12px;color:var(--muted);margin:14px 2px 8px}
+
+.shortcuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.typer{display:flex;gap:8px;margin-top:8px}
+input[type=text],textarea,select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+label.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:8px}
+
+/* settings sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg);z-index:21;overflow-y:auto;padding:16px;padding-top:max(16px,env(safe-area-inset-top));box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+.sheet h3{margin:4px 0 14px;font-size:22px;letter-spacing:-.01em;display:flex;align-items:center}
+.sheet h3 .iconbtn{margin-left:auto}
+.group{background:var(--panel);border-radius:14px;padding:14px;margin-bottom:14px}
+.group h4{margin:0 0 4px;font-size:15px}
+.group p{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--panel2);border-radius:10px;padding:2px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:8px;padding:8px 6px;font-size:13px;font-weight:500;cursor:pointer}
+.seg button.on{background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.logbox{height:220px;overflow:auto;background:#0b0b0c;color:#d1f7c4;border-radius:10px;padding:10px;font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-all}
+.row{display:flex;gap:8px;margin-top:8px}
+.row .b{flex:0 0 auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv span:nth-child(odd){color:var(--muted)}
+.lblgrid{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(30,30,32,.94);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center;transition:opacity .25s;pointer-events:none}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand" id="brand">MixPre Remote<small id="brandSub">Not connected</small></div>
+  <span class="pill" id="connPill"><span class="dot"></span><span id="connText">Offline</span></span>
+  <button class="iconbtn" id="backBtn" title="All remotes" aria-label="All remotes" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <button class="pill audio" id="audioPill" hidden title="Audio">🎧 <span id="audioPillText">Listening</span></button>
+  <span class="pill rec" id="recPill" hidden><span class="dot"></span>REC</span>
+  <span class="pill" id="usbPill" hidden><span class="dot"></span><span id="usbText">USB</span></span>
+  <button class="iconbtn" id="settingsBtn" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<main>
+  <!-- CONNECT -->
+  <section id="connect" class="connect">
+    <div class="card">
+      <div class="logo"><svg width="34" height="34" viewBox="0 0 32 32"><rect x="5" y="6" width="3.5" height="20" rx="1.75" fill="#fff"/><rect x="14.25" y="11" width="3.5" height="15" rx="1.75" fill="#fff"/><rect x="23.5" y="4" width="3.5" height="22" rx="1.75" fill="#ff3b30"/></svg></div>
+      <h1>MixPre Remote</h1>
+      <p id="connectLead">Plug the Pi into the MixPre's USB‑A port and give it ~30 seconds to boot.</p>
+      <div class="searching" id="searching" hidden><span class="spin"></span><span id="searchText">Connecting…</span></div>
+      <div id="choices">
+        <a class="primary" id="localBtn" href="http://mixpre.local/">Open controls on the MixPre Wi‑Fi</a>
+        <div class="hint" style="margin-top:8px">Join Wi‑Fi <b>MixPre‑Remote‑XXXX</b> first (or the same network as the Pi) · backup <a href="http://192.168.4.1/">192.168.4.1</a></div>
+        <div class="nonet" id="noNetHint" hidden>No internet right now — looks like you're on the MixPre Wi‑Fi. <a href="http://mixpre.local/">Open controls →</a></div>
+        <div class="divider">your MixPre Remotes online</div>
+        <div class="pilist" id="piList"></div>
+        <div class="hint" id="listStatus" style="margin-top:8px">Looking…</div>
+        <form class="codeform" id="setupForm" autocomplete="off" style="margin-top:8px;flex-direction:column" hidden>
+          <input type="text" id="relayInput" placeholder="Relay URL (https://mixpre-relay.you.workers.dev)" spellcheck="false">
+          <input type="password" id="keyInput" placeholder="Access key" autocomplete="off">
+          <button class="b" type="submit" style="padding:10px">Show my remotes</button>
+        </form>
+        <div id="bleBox">
+          <div class="divider">or nearby</div>
+          <button class="secondary" id="findBtn">Find over Bluetooth</button>
+          <div class="hint" style="margin-top:8px">Chrome / Edge only · a list of nearby remotes pops up</div>
+        </div>
+      </div>
+      <div class="ver" id="verTap">v0.2.0</div>
+    </div>
+  </section>
+
+  <!-- CONTROL -->
+  <section id="control" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2>Transport</h2><span class="note">Tap ⏪ ⏩ to skip · hold to scrub</span></div>
+      <div class="transport-row">
+        <button class="b tbtn" id="tRew" aria-label="Rewind"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 6v12l-8.5-6L11 6zm9.5 0v12L12 12l8.5-6z"/></svg></button>
+        <button class="b tbtn" id="tStop" aria-label="Stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+        <button class="b tbtn play" id="tPlay" aria-label="Play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5L8 5.5z"/></svg></button>
+        <button class="b tbtn rec" id="tRec" aria-label="Record"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg></button>
+        <button class="b tbtn" id="tFf" aria-label="Fast forward"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 6v12l8.5-6L13 6zM3.5 6v12L12 12 3.5 6z"/></svg></button>
+        <button class="b tbtn" id="tCue" aria-label="Cue mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button>
+      </div>
+    </div>
+
+    <div class="panel" id="chPanel">
+      <div class="panel-head"><h2>Channels</h2><span class="note" id="chNote"></span></div>
+      <div class="strips" id="strips"></div>
+      <div class="kbrow" id="kbChannels"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel" id="navPanel">
+        <div class="panel-head"><h2>Navigate</h2><span class="note">USB keyboard</span></div>
+        <div class="navwrap">
+          <div class="dpad">
+            <span></span>
+            <button class="b" data-hold="UP" aria-label="Up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+            <span></span>
+            <button class="b" data-hold="LEFT" aria-label="Left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button class="b enter" data-tap="ENTER">OK</button>
+            <button class="b" data-hold="RIGHT" aria-label="Right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <span></span>
+            <button class="b" data-hold="DOWN" aria-label="Down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+            <span></span>
+          </div>
+          <div>
+            <div class="keys">
+              <button class="b" data-tap="ESC">Back<small>Esc</small></button>
+              <button class="b" data-tap="F1">Menu<small>F1</small></button>
+              <button class="b" data-tap="F12">Home<small>F12</small></button>
+              <button class="b" data-tap="F2">Files<small>F2</small></button>
+              <button class="b" data-tap="F3">Meters<small>F3</small></button>
+              <button class="b" data-tap="STAR" id="starBtn">★ Shortcut<small>*</small></button>
+            </div>
+            <div class="sublabel">Headphones (Home screen)</div>
+            <div class="keys" style="grid-template-columns:1fr 1fr">
+              <button class="b" data-hold="DOWN">HP −</button>
+              <button class="b" data-hold="UP">HP +</button>
+            </div>
+          </div>
+        </div>
+        <div class="sublabel">Menu quad buttons</div>
+        <div class="quad">
+          <button class="b" data-tap="Q">Top L<small>Q</small></button>
+          <button class="b" data-tap="W">Top C/R<small>W</small></button>
+          <button class="b" data-tap="E">Top R<small>E · 10 II</small></button>
+          <button class="b" data-tap="A">Bot L<small>A</small></button>
+          <button class="b" data-tap="S">Bot C/R<small>S</small></button>
+          <button class="b" data-tap="D">Bot R<small>D · 10 II</small></button>
+        </div>
+      </div>
+
+      <div class="panel" id="moreCol">
+        <div class="panel-head"><h2>Shortcuts</h2><span class="note">Assign on MixPre: Menu › ★ Shortcuts › Control Surface</span></div>
+        <div class="shortcuts" id="userShortcuts"></div>
+        <div class="sublabel">More</div>
+        <div class="shortcuts">
+          <button class="b" id="kbCue">Cue mark<small>Ctrl+M</small></button>
+          <button class="b" id="fileXfer" data-confirm>File transfer<small>Ctrl+F</small></button>
+          <button class="b" id="lockMenu" data-confirm>Lock menu<small>1+2+3</small></button>
+        </div>
+        <div class="sublabel">Type text (track names, metadata, passwords)</div>
+        <div class="typer">
+          <input type="text" id="typeText" placeholder="Text to type on the MixPre" maxlength="64" autocomplete="off">
+          <button class="b" id="typeBtn">Type</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="typeEnter" checked> Press OK (Enter) after typing</label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="recglow" aria-hidden="true"></div>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden>
+  <h3>Settings <button class="iconbtn" id="closeSheet" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h3>
+
+  <div class="group">
+    <h4>Device</h4>
+    <div class="kv" id="devInfo"><span>Status</span><span>Not connected</span></div>
+    <div class="row"><button class="b" id="disconnectBtn">Disconnect</button></div>
+  </div>
+
+  <div class="group" id="audioGroup">
+    <h4>Listen</h4>
+    <p>Hear the MixPre on any device connected to this page — even over the internet. One device sends, everyone else can listen.</p>
+    <div class="wifistatus" id="audioStatus">Nobody is sending audio right now.</div>
+    <canvas class="meter" id="meter" width="800" height="76" hidden></canvas>
+    <div class="meterscale" id="meterScale" hidden><span style="left:0">−60</span><span style="left:33.3%">−40</span><span style="left:66.7%">−20</span><span style="left:80%">−12</span><span style="left:90%">−6</span><span style="left:100%">0</span></div>
+    <div class="audiorow">
+      <button class="b" id="listenBtn">🎧 Listen</button>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+    </div>
+    <div class="sublabel">Send from this device</div>
+    <p class="small">Plug the MixPre into this computer with USB‑C (or into Line In), pick it here, then start sending. On the MixPre, choose what goes to USB in Menu › Outputs.</p>
+    <div class="audiorow">
+      <select id="srcSel"><option value="">Choose input…</option></select>
+      <button class="b" id="sendBtn">Start sending</button>
+    </div>
+    <div class="small" id="sendStatus" style="margin-top:6px"></div>
+  </div>
+
+  <div class="group" id="remoteGroup">
+    <h4>Remote access</h4>
+    <p>When the Pi has internet it shows up in the list on your control page — click it to connect (directly on the same network first, otherwise through the cloud).</p>
+    <div class="kv"><span>Cloud</span><span id="cloudVal">—</span></div>
+    <div class="sublabel">Name in the list</div>
+    <div class="typer"><input type="text" id="nameSet" maxlength="20" placeholder="e.g. Cart MixPre-10"><button class="b" id="nameSave">Save</button></div>
+    <div class="sublabel">Relay URL (saved on the Pi and this browser)</div>
+    <div class="typer"><input type="text" id="relaySet" placeholder="https://mixpre-relay.you.workers.dev"><button class="b" id="relaySave">Save</button></div>
+    <div class="sublabel">Access key (this browser only)</div>
+    <div class="typer"><input type="password" id="keySet" placeholder="Access key" autocomplete="off"><button class="b" id="keySave">Save</button></div>
+  </div>
+
+  <div class="group" id="wifiGroup">
+    <h4>Pi Wi‑Fi</h4>
+    <div class="wifistatus" id="wifiStatus">—</div>
+    <div class="warnbox" id="wifiMsg" hidden></div>
+    <div class="row"><button class="b" id="wifiScan">Scan for networks</button><button class="b" id="wifiHotspot">Use Pi's hotspot</button></div>
+    <div class="netlist" id="wifiList"></div>
+    <div class="sublabel" id="savedLabel" hidden>Remembered</div>
+    <div class="netlist" id="wifiSaved"></div>
+    <div class="sublabel">Hotspot mode</div>
+    <div class="seg" id="hsSeg"><button data-v="local">Local‑only</button><button data-v="captive">Pop‑up page</button></div>
+    <p class="small" style="margin-top:8px"><b>Local‑only</b>: phones keep their internet; open mixpre.local yourself. <b>Pop‑up page</b>: the page opens by itself when you join, but no internet while joined.</p>
+    <p class="small">Device address (for venues that register devices): <code id="macVal">—</code></p>
+  </div>
+
+  <div class="group">
+    <h4>MixPre model</h4>
+    <p>Sets how many channels are shown (3 II: 5 · 6 II: 6 · 10 II: 10).</p>
+    <div class="seg" id="modelSeg">
+      <button data-v="3">MixPre‑3 II</button><button data-v="6">MixPre‑6 II</button><button data-v="10">MixPre‑10 II</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <h4>USB mode</h4>
+    <p>What the Pi pretends to be. <b>Both</b> = keyboard + nanoKONTROL2 (all controls). If the MixPre doesn't show the "nanoKONTROL2" popup, try <b>MIDI</b> alone; <b>Keyboard</b> always works but has no faders or feedback.</p>
+    <div class="seg" id="modeSeg"><button data-v="0">Keyboard</button><button data-v="1">MIDI</button><button data-v="2">Both</button></div>
+  </div>
+
+  <div class="group">
+    <h4>Shortcut button labels</h4>
+    <p>Name U1–U5 to match what you assigned on the MixPre.</p>
+    <div class="lblgrid" id="lblGrid"></div>
+  </div>
+
+  <div class="group">
+    <h4>★ key style</h4>
+    <div class="seg" id="starSeg"><button data-v="kp">Keypad *</button><button data-v="shift8">Shift + 8</button></div>
+  </div>
+
+  <div class="group">
+    <h4>MIDI / USB log</h4>
+    <p>Shows what the MixPre sends back (LED feedback, SysEx handshake). Copy this if something doesn't work.</p>
+    <div class="logbox" id="logBox"></div>
+    <div class="row"><button class="b" id="copyLog">Copy</button><button class="b" id="clearLog">Clear</button></div>
+  </div>
+
+  <div class="group">
+    <h4>Advanced</h4>
+    <p>Send raw MIDI (hex), e.g. <code>B0 2D 7F</code></p>
+    <div class="typer"><input type="text" id="rawMidi" placeholder="B0 2D 7F"><button class="b" id="rawSend">Send</button></div>
+    <p style="margin-top:12px">CC map (JSON). Only change if the log shows the MixPre uses different numbers.</p>
+    <textarea id="ccMap" rows="7"></textarea>
+    <div class="row"><button class="b" id="ccSave">Save map</button><button class="b" id="ccReset">Reset</button></div>
+  </div>
+  <p class="hint" id="aboutLine" style="text-align:center;user-select:none;-webkit-user-select:none">MixPre Remote · web 0.2.0</p>
+</aside>
+
+<div class="toast" id="toast" style="opacity:0"></div>
+
+<script>
+"use strict";
+/* ============================================================ constants */
+const SERVICE = "00004d50-0000-1000-8000-00805f9b34fb";
+const CHR = {
+  cmd:    "4d500001-6d69-7870-7265-72656d6f7465",
+  state:  "4d500002-6d69-7870-7265-72656d6f7465",
+  levels: "4d500003-6d69-7870-7265-72656d6f7465",
+  log:    "4d500004-6d69-7870-7265-72656d6f7465",
+  json:   "4d500005-6d69-7870-7265-72656d6f7465",
+};
+// Your relay (Cloudflare Worker) URL, e.g. "https://mixpre-relay.yourname.workers.dev".
+// Optional: the page also learns it from the Pi the first time you connect.
+const DEFAULT_RELAY = "";
+const STUN = "stun:stun.cloudflare.com:3478";
+const params = new URLSearchParams(location.search);
+// true when this page was opened from the Pi itself (hotspot / mixpre.local)
+const PI_SERVED = location.protocol === "http:" && !params.has("hosted");
+const MODES = ["keyboard", "midi", "both"];
+const DEFAULT_CC = { fader:0, knob:16, solo:32, mute:48, arm:64, play:41, stop:42, rew:43, ff:44, rec:45, cycle:46, set:60, markPrev:61, markNext:62 };
+const MOD = { CTRL:0x01, SHIFT:0x02, ALT:0x04 };
+const KEY = { ESC:0x29, F1:0x3A, F2:0x3B, F3:0x3C, F12:0x45, ENTER:0x28, SPACE:0x2C, RIGHT:0x4F, LEFT:0x50, DOWN:0x51, UP:0x52,
+  Q:0x14, W:0x1A, E:0x08, A:0x04, S:0x16, D:0x07, R:0x15, M:0x10, F:0x09, KP_STAR:0x55, N8:0x25 };
+// channels per model: MixPre-3 II = 3 inputs + Aux L/R, 6 II = 4 + Aux L/R, 10 II = 8 + Aux L/R
+const CH_COUNT = { 3: 5, 6: 6, 10: 10 };
+const DIGIT = n => n === 10 ? 0x27 : 0x1E + (n - 1);   // channel 1..10 -> keys 1..9,0
+const OP = { TAP_KEY:1, HOLD_KEY:2, REL_KEY:3, TYPE:4, CC:0x10, TAP_CC:0x11, COMBO:0x12, HOLD_CC:0x13, REL_CC:0x14, RAW:0x15, MODE:0x20, GET:0x30 };
+
+/* ============================================================ storage (safe) */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("mixpre." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("mixpre." + k, JSON.stringify(v)); } catch {} },
+};
+let CC = Object.assign({}, DEFAULT_CC, store.get("ccmap", {}));
+let model = store.get("model", 6);
+let starStyle = store.get("star", "kp");
+let labels = store.get("labels", ["U1","U2","U3","U4","U5"]);
+let remote = store.get("remote", null);       // {code, relay, name} - remembered after first connection
+const relayUrl = () => store.get("relay", "") || (remote && remote.relay) || DEFAULT_RELAY;
+const accessKey = () => store.get("key", "");
+const httpBase = u => { u = String(u || "").trim().replace(/\/+$/, ""); if (u.startsWith("wss://")) return "https://" + u.slice(6); if (u.startsWith("ws://")) return "http://" + u.slice(5); return /^https?:\/\//.test(u) ? u : (u ? "https://" + u : ""); };
+const normCode = c => String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const fmtCode = c => c ? c.replace(/(.{4})(?=.)/g, "$1-") : "—";
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+const isPrivate = a => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|127\.|fd|fe80)/i.test(a || "") || /\.local$/i.test(a || "");
+
+/* ============================================================ app state */
+const S = { net:null, mode:"both", midi:false, hid:false, usb:false, arm:0, mute:0, solo:0, transport:0, levels:new Array(16).fill(255), name:"", version:"" };
+const $ = id => document.getElementById(id);
+const hasMidi = () => S.mode !== "keyboard";
+const hasKb = () => S.mode !== "midi";
+
+function toast(msg, ms = 2200) {
+  const t = $("toast"); t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.style.opacity = 0, ms);
+}
+
+/* ============================================================ transports */
+let transport = null;
+
+function handleServerMsg(m) {
+  if (!m || typeof m !== "object") return;
+  if (m.type === "state") applyState(m);
+  else if (m.type === "log") addLog(m.line);
+  else if (m.type === "logs") { $("logBox").textContent = ""; (m.lines || []).forEach(addLog); }
+  else if (m.type === "net") applyNet(m);
+  else if (m.type === "you") Aud.myId = m.id;
+  else if (m.type === "peer") Aud.onPeer(m.from, m.d || {});
+}
+function applyNet(n) {
+  S.net = n;
+  if (n.name) S.name = n.name;
+  // remember this remote so the page can connect through the cloud next time
+  const relay = n.relay_url || relayUrl();
+  if (n.relay_url && !(transport && transport.kind === "Demo")) store.set("relay", n.relay_url);
+  if (n.code && relay && !(transport && transport.kind === "Demo")) {
+    const r = { code: n.code, relay, name: n.name || "" };
+    if (!remote || remote.code !== r.code || remote.relay !== r.relay || remote.name !== r.name) { remote = r; store.set("remote", r); }
+  }
+  renderNet(); render();
+}
+const sendJson = obj => transport && transport.sendJson && transport.sendJson(obj);
+
+class WsTransport {
+  constructor() { this.kind = "Wi‑Fi"; this.ws = null; this.closed = false; }
+  connect() {
+    return new Promise((resolve) => {
+      const open = () => {
+        if (this.closed) return;
+        setConn("warn", "Connecting…");
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        ws.binaryType = "arraybuffer";
+        ws.onopen = () => { this.ws = ws; setConn("ok", "Wi‑Fi"); showControl(true); resolve(); setTimeout(() => Aud.hello(), 300); };
+        ws.onmessage = e => { try { handleServerMsg(JSON.parse(e.data)); } catch {} };
+        ws.onclose = () => { this.ws = null; if (!this.closed) { setConn("bad", "Reconnecting…"); setTimeout(open, 1500); } };
+      };
+      open();
+    });
+  }
+  send(u8) { if (this.ws && this.ws.readyState === 1) { this.ws.send(u8); return true; } toast("Not connected"); return false; }
+  sendJson(o) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); }
+  label() { return "Wi‑Fi"; }
+  disconnect() { this.closed = true; if (this.ws) this.ws.close(); }
+}
+
+class BleTransport {
+  constructor() { this.kind = "Bluetooth"; this.q = []; this.busy = false; this.userClosed = false; this.rx = {}; this.txId = 0; }
+  label() { return "Bluetooth"; }
+  async connect() {
+    this.device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE] }, { namePrefix: "MixPre" }],
+      optionalServices: [SERVICE],
+    });
+    await this.useDevice(this.device);
+  }
+  async useDevice(device) {
+    this.device = device;
+    if (!this._listening) {
+      device.addEventListener("gattserverdisconnected", () => this.onDisconnect());
+      this._listening = true;
+    }
+    await this.attach();
+  }
+  async attach() {
+    setConn("warn", "Connecting…");
+    const server = await this.device.gatt.connect();
+    const svc = await server.getPrimaryService(SERVICE);
+    this.cmd = await svc.getCharacteristic(CHR.cmd);
+    const st = await svc.getCharacteristic(CHR.state);
+    const lv = await svc.getCharacteristic(CHR.levels);
+    const lg = await svc.getCharacteristic(CHR.log);
+    st.addEventListener("characteristicvaluechanged", e => this.parseState(e.target.value));
+    lv.addEventListener("characteristicvaluechanged", e => this.parseLevels(e.target.value));
+    lg.addEventListener("characteristicvaluechanged", e => addLog(new TextDecoder().decode(e.target.value)));
+    await st.startNotifications(); await lv.startNotifications();
+    try { await lg.startNotifications(); } catch {}
+    try {
+      const js = await svc.getCharacteristic(CHR.json);
+      js.addEventListener("characteristicvaluechanged", e => this.onJsonFrame(e.target.value));
+      await js.startNotifications();
+    } catch {}
+    this.parseState(await st.readValue());
+    this.parseLevels(await lv.readValue());
+    S.name = this.device.name || "MixPre Remote";
+    setConn("ok", "Bluetooth");
+    showControl(true);
+    render();
+    this.sendJson({ op: "net_status" });
+  }
+  // JSON (Wi-Fi, remote access) arrives in frames: [0x40, id, index, total] + payload
+  onJsonFrame(dv) {
+    const u8 = new Uint8Array(dv.buffer.slice(dv.byteOffset, dv.byteOffset + dv.byteLength));
+    if (u8.length < 4 || u8[0] !== 0x40) return;
+    const [, id, idx, total] = u8;
+    const parts = (this.rx[id] = this.rx[id] || {});
+    parts[idx] = u8.slice(4);
+    if (Object.keys(parts).length !== total) return;
+    delete this.rx[id];
+    const all = new Uint8Array(Object.values(parts).reduce((n, p) => n + p.length, 0));
+    let o = 0; for (let i = 0; i < total; i++) { all.set(parts[i], o); o += parts[i].length; }
+    try { handleServerMsg(JSON.parse(new TextDecoder().decode(all))); } catch {}
+  }
+  sendJson(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    const n = Math.max(1, Math.ceil(bytes.length / 16));
+    if (n > 255) return;
+    this.txId = (this.txId + 1) & 255;
+    for (let i = 0; i < n; i++) this.q.push(new Uint8Array([0x40, this.txId, i, n, ...bytes.slice(i * 16, i * 16 + 16)]));
+    this.pump();
+  }
+  parseState(dv) {
+    if (dv.byteLength < 10) return;
+    const f = dv.getUint8(2);
+    applyState({ mode: MODES[dv.getUint8(1)] || "both", midi: !!(f & 1), hid: !!(f & 2), usb: !!(f & 4),
+      arm: dv.getUint16(3, true), mute: dv.getUint16(5, true), solo: dv.getUint16(7, true), transport: dv.getUint8(9) });
+  }
+  parseLevels(dv) {
+    const lv = []; for (let i = 0; i < Math.min(16, dv.byteLength); i++) lv.push(dv.getUint8(i));
+    applyState({ levels: lv });
+  }
+  async onDisconnect() {
+    if (this.userClosed) return;
+    setConn("bad", "Reconnecting…");
+    for (let i = 0; i < 30 && !this.userClosed; i++) {
+      await new Promise(r => setTimeout(r, Math.min(1000 + i * 500, 4000)));
+      try { await this.attach(); addLog("Reconnected"); return; } catch {}
+    }
+    setConn("bad", "Lost connection"); showControl(false);
+    if (transport === this) transport = null;
+  }
+  send(u8) {
+    if (!this.cmd || !this.device.gatt.connected) { toast("Not connected"); return false; }
+    if (u8[0] === OP.CC) {   // coalesce fader moves
+      const i = this.q.findIndex(x => x[0] === OP.CC && x[1] === u8[1]);
+      if (i >= 0) { this.q[i] = u8; return true; }
+    }
+    this.q.push(u8); this.pump(); return true;
+  }
+  async pump() {
+    if (this.busy) return; this.busy = true;
+    while (this.q.length) {
+      const m = this.q.shift();
+      try {
+        const fast = (m[0] === OP.CC || m[0] === OP.HOLD_CC || m[0] === OP.HOLD_KEY) && this.cmd.writeValueWithoutResponse;
+        if (fast) await this.cmd.writeValueWithoutResponse(m);
+        else if (this.cmd.writeValueWithResponse) await this.cmd.writeValueWithResponse(m);
+        else await this.cmd.writeValue(m);
+      } catch (e) { console.warn("BLE write failed", e); }
+    }
+    this.busy = false;
+  }
+  disconnect() { this.userClosed = true; try { this.device.gatt.disconnect(); } catch {} }
+}
+
+/* ============================================================ cloud (relay + direct WebRTC) */
+class CloudTransport {
+  constructor(r) { this.kind = "Cloud"; this.r = r; this.closed = false; this.online = false; this.route = "relay"; this.pc = null; this.dc = null; }
+  wsUrl() {
+    let u = this.r.relay.trim().replace(/\/+$/, "");
+    if (u.startsWith("https://")) u = "wss://" + u.slice(8);
+    else if (u.startsWith("http://")) u = "ws://" + u.slice(7);
+    else if (!/^wss?:\/\//.test(u)) u = "wss://" + u;
+    const k = accessKey();
+    return `${u}/client?code=${encodeURIComponent(this.r.code)}${k ? "&key=" + encodeURIComponent(k) : ""}`;
+  }
+  connect() {
+    setSearching(true, `Connecting to ${this.r.name || "your MixPre Remote"}…`);
+    setConn("warn", "Searching…");
+    this.open();
+  }
+  open() {
+    if (this.closed) return;
+    let ws;
+    try { ws = new WebSocket(this.wsUrl()); } catch (e) { setSearching(true, "Relay URL looks wrong — check Settings"); return; }
+    this.ws = ws;
+    ws.onopen = () => { this.ping = setInterval(() => { try { ws.send("ping"); } catch {} }, 30000); };
+    ws.onmessage = e => {
+      if (e.data === "pong") return;
+      let m; try { m = JSON.parse(e.data); } catch { return; }
+      if (m.t === "presence") this.onPresence(m);
+      else if (m.t === "you") Aud.myId = m.id;
+      else if (m.t === "peer") Aud.onPeer(m.from, m.d || {});
+      else if (m.t === "answer") this.onAnswer(m.sdp);
+      else if (m.t === "bcast" && !this.dcOpen()) { try { handleServerMsg(JSON.parse(m.d)); } catch {} }
+    };
+    ws.onclose = () => {
+      clearInterval(this.ping); this.ws = null;
+      if (this.closed) return;
+      this.setOnline(false, "Can't reach the cloud — retrying…");
+      setTimeout(() => this.open(), 4000);
+    };
+  }
+  onPresence(m) {
+    if (m.online) {
+      if (m.name) { this.r.name = m.name; S.name = m.name; }
+      this.setOnline(true);
+      if (!this.pc) this.startP2P();
+    } else {
+      this.closePeer();
+      this.setOnline(false);
+    }
+  }
+  setOnline(on, text) {
+    const was = this.online;
+    this.online = on;
+    if (on) { setSearching(false); showControl(true); this.refreshLabel(); if (!was) Aud.hello(); }
+    else {
+      showControl(false);
+      setConn("warn", "Waiting…");
+      setSearching(true, text || `${this.r.name || "Your MixPre Remote"} is offline — waiting for it to come online…`);
+    }
+    render();
+  }
+  // ---- direct connection: tries the local network first, then the internet
+  async startP2P() {
+    if (!window.RTCPeerConnection || this.closed) return;
+    this.closePeer();
+    const pc = this.pc = new RTCPeerConnection({ iceServers: [{ urls: STUN }] });
+    const dc = this.dc = pc.createDataChannel("ctl", { ordered: true });
+    dc.binaryType = "arraybuffer";
+    dc.onopen = () => {
+      clearTimeout(this.p2pTimer);
+      this.wsSend({ t: "p2p", on: true });
+      this.updateRoute();
+      this.routeTimer = setInterval(() => this.updateRoute(), 5000);
+    };
+    dc.onmessage = e => { if (typeof e.data === "string") { try { handleServerMsg(JSON.parse(e.data)); } catch {} } };
+    dc.onclose = () => {
+      if (this.dc !== dc) return;
+      this.peerGone();
+      if (this.online && !this.closed) setTimeout(() => { if (!this.pc && this.online) this.startP2P(); }, 5000);
+    };
+    pc.onconnectionstatechange = () => { if (pc.connectionState === "failed" && this.pc === pc) { this.peerGone(); try { pc.close(); } catch {} } };
+    try {
+      await pc.setLocalDescription(await pc.createOffer());
+      await new Promise(res => {
+        if (pc.iceGatheringState === "complete") return res();
+        const t = setTimeout(res, 3000);
+        pc.addEventListener("icegatheringstatechange", () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); res(); } });
+      });
+      if (this.pc !== pc) return;
+      this.wsSend({ t: "offer", sdp: pc.localDescription.sdp });
+    } catch { return; }
+    // no direct link within 20 s -> keep using the relay, try again later
+    this.p2pTimer = setTimeout(() => {
+      if (this.pc === pc && !this.dcOpen()) { this.closePeer(); setTimeout(() => { if (!this.pc && this.online) this.startP2P(); }, 30000); }
+    }, 20000);
+  }
+  onAnswer(sdp) {
+    if (this.pc && this.pc.signalingState === "have-local-offer") this.pc.setRemoteDescription({ type: "answer", sdp }).catch(() => {});
+  }
+  dcOpen() { return !!(this.dc && this.dc.readyState === "open"); }
+  async updateRoute() {
+    if (!this.pc) return;
+    try {
+      const stats = await this.pc.getStats();
+      let pair = null;
+      stats.forEach(r => { if (r.type === "transport" && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId); });
+      if (!pair) stats.forEach(r => { if (r.type === "candidate-pair" && r.nominated && r.state === "succeeded") pair = r; });
+      if (pair) {
+        const rem = stats.get(pair.remoteCandidateId) || {}, loc = stats.get(pair.localCandidateId) || {};
+        const addr = rem.address || rem.ip || "";
+        this.route = (rem.candidateType === "relay" || loc.candidateType === "relay") ? "relay"
+          : (rem.candidateType === "host" || isPrivate(addr)) ? "local" : "direct";
+      }
+    } catch {}
+    this.refreshLabel();
+  }
+  label() {
+    if (!this.online) return "Waiting…";
+    if (!this.dcOpen()) return "Cloud relay";
+    return this.route === "local" ? "Local network" : this.route === "relay" ? "Cloud relay" : "Internet (direct)";
+  }
+  refreshLabel() { if (this.online) setConn("ok", this.label()); render(); }
+  wsSend(o) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); }
+  send(u8) {
+    if (this.dcOpen()) { this.dc.send(u8); return true; }
+    if (this.online && this.ws && this.ws.readyState === 1) { this.wsSend({ t: "cmd", d: b64(u8) }); return true; }
+    toast("Not connected"); return false;
+  }
+  sendJson(o) { if (this.dcOpen()) this.dc.send(JSON.stringify(o)); else this.wsSend({ t: "json", d: o }); }
+  peerGone() {
+    const wasOpen = this.dcOpen() || this.dc;
+    clearTimeout(this.p2pTimer); clearInterval(this.routeTimer);
+    this.pc = null; this.dc = null;
+    if (wasOpen) this.wsSend({ t: "p2p", on: false });
+    this.refreshLabel();
+  }
+  closePeer() {
+    const pc = this.pc, dc = this.dc;
+    this.peerGone();
+    try { dc && dc.close(); } catch {}
+    try { pc && pc.close(); } catch {}
+  }
+  disconnect() { this.closed = true; this.closePeer(); try { this.ws && this.ws.close(); } catch {} }
+}
+
+/* ============================================================ demo mode (hidden: tap the version 5 times)
+   A pretend MixPre inside the page, so every control can be tried without hardware. */
+class DemoTransport {
+  constructor() {
+    this.kind = "Demo"; this.mode = "both"; this.leds = {}; this.held = {}; this.heldKey = false;
+    this.levels = new Array(16).fill(255);
+    this.net = { type: "net", name: "Demo MixPre", version: "demo", code: "DEMO2345", relay_url: "", cloud: false,
+      cloud_viewers: 0, direct: false, saved: ["Studio WiFi"], mode: "hotspot", ssid: "MixPre-Remote-DEMO", ip: "192.168.4.1",
+      connectivity: "none", hotspot_ssid: "MixPre-Remote-DEMO", hotspot_mode: "local", networks: [], message: "", mac: "B8:27:EB:DE:30:00" };
+  }
+  label() { return "Demo mode"; }
+  connect() {
+    setSearching(false); showControl(true); setConn("warn", "Demo mode");
+    handleServerMsg({ type: "logs", lines: ["Demo mode — nothing is sent to a MixPre. Disconnect in Settings to leave."] });
+    this.emit(); this.emitNet();
+  }
+  log(t) { handleServerMsg({ type: "log", line: new Date().toTimeString().slice(0, 8) + " " + t }); }
+  emit() {
+    let arm = 0, mute = 0, solo = 0;
+    for (let i = 0; i < 8; i++) {
+      if (this.leds[CC.arm + i]) arm |= 1 << i;
+      if (this.leds[CC.mute + i]) mute |= 1 << i;
+      if (this.leds[CC.solo + i]) solo |= 1 << i;
+    }
+    const tr = (this.leds[CC.play] ? 1 : 0) | (this.leds[CC.stop] ? 2 : 0) | (this.leds[CC.rec] ? 16 : 0);
+    handleServerMsg({ type: "state", mode: this.mode, midi: this.mode !== "keyboard", hid: this.mode !== "midi", usb: true,
+      arm, mute, solo, transport: tr, levels: this.levels.slice(), name: "Demo MixPre", version: "demo" });
+  }
+  emitNet() { handleServerMsg(Object.assign({}, this.net)); }
+  press(cc) {   // what a MixPre does with the controller LEDs
+    const L = this.leds;
+    if ((cc >= CC.solo && cc < CC.solo + 8) || (cc >= CC.mute && cc < CC.mute + 8) || (cc >= CC.arm && cc < CC.arm + 8) || cc === CC.rec) L[cc] = !L[cc];
+    else if (cc === CC.play) { L[CC.play] = true; L[CC.stop] = false; }
+    else if (cc === CC.stop) { L[CC.play] = false; L[CC.stop] = true; L[CC.rec] = false; }
+    this.emit();
+  }
+  send(u8) {
+    const hex = b => b.toString(16).toUpperCase().padStart(2, "0");
+    const op = u8[0];
+    if (op === OP.CC) {
+      const cc = u8[1], v = u8[2];
+      if (cc >= CC.fader && cc < CC.fader + 8) this.levels[cc - CC.fader] = v;
+      else if (cc >= CC.knob && cc < CC.knob + 8) this.levels[8 + cc - CC.knob] = v;
+      this.emit();
+    } else if (op === OP.TAP_CC) { this.log("OUT  button CC " + u8[1]); this.press(u8[1]); }
+    else if (op === OP.COMBO) this.log(`OUT  combo CC ${u8[1]} + ${u8[2]}`);
+    else if (op === OP.HOLD_CC) { if (!this.held[u8[1]]) { this.held[u8[1]] = 1; this.log("OUT  hold CC " + u8[1]); this.press(u8[1]); } }
+    else if (op === OP.REL_CC) delete this.held[u8[1]];
+    else if (op === OP.TAP_KEY) this.log(`KEY  mods=${hex(u8[1])} keys=${[...u8.slice(2)].map(hex).join(" ")}`);
+    else if (op === OP.HOLD_KEY) { if (!this.heldKey) { this.heldKey = true; this.log("KEY  hold " + hex(u8[2])); } }
+    else if (op === OP.REL_KEY) this.heldKey = false;
+    else if (op === OP.TYPE) this.log("TYPE " + new TextDecoder().decode(u8.slice(1)).replace(/\n/g, "⏎"));
+    else if (op === OP.RAW) this.log("OUT  raw " + [...u8.slice(1)].map(hex).join(" "));
+    else if (op === OP.MODE) { this.mode = MODES[u8[1]] || "both"; this.log("Switching USB mode to " + this.mode); this.emit(); }
+    return true;
+  }
+  sendJson(o) {
+    const n = this.net;
+    switch (o.op) {
+      case "wifi_scan":
+        setTimeout(() => { n.networks = [{ ssid: "Studio WiFi", signal: 82, secure: true }, { ssid: "Yuki's iPhone", signal: 70, secure: true }, { ssid: "Hotel Guest", signal: 41, secure: false }]; this.emitNet(); }, 600);
+        break;
+      case "wifi_join":
+        this.log(`Wi-Fi: joining '${o.ssid}'`);
+        Object.assign(n, { mode: "switching", message: `Joining ${o.ssid}…` }); this.emitNet();
+        setTimeout(() => {
+          if (o.psk === "wrong") Object.assign(n, { mode: "hotspot", ssid: n.hotspot_ssid, ip: "192.168.4.1", connectivity: "none", message: `Couldn't join “${o.ssid}” — check the password. Back on the Pi's hotspot.` });
+          else {
+            Object.assign(n, { mode: "client", ssid: o.ssid, ip: "192.168.1.50", connectivity: o.ssid === "Hotel Guest" ? "portal" : "full", message: "" });
+            n.saved = [o.ssid, ...n.saved.filter(x => x !== o.ssid)];
+          }
+          this.emitNet();
+        }, 1500);
+        break;
+      case "wifi_forget": n.saved = n.saved.filter(x => x !== o.ssid); this.emitNet(); break;
+      case "hotspot": Object.assign(n, { mode: "hotspot", ssid: n.hotspot_ssid, ip: "192.168.4.1", connectivity: "none", message: "" }); this.emitNet(); break;
+      case "hotspot_mode": n.hotspot_mode = o.mode; this.log("Hotspot mode: " + o.mode); this.emitNet(); break;
+      case "set_relay": n.relay_url = o.url || ""; this.emitNet(); break;
+      case "new_code": n.code = Array.from({ length: 8 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]).join(""); this.emitNet(); break;
+      default: this.emitNet();
+    }
+  }
+  disconnect() {}
+}
+let verTaps = 0, verTimer = null;
+function verTap() {
+  verTaps++;
+  clearTimeout(verTimer); verTimer = setTimeout(() => { verTaps = 0; }, 1500);
+  if (verTaps >= 5) {
+    verTaps = 0;
+    if (transport) transport.disconnect();
+    $("sheet").hidden = true; $("scrim").hidden = true;
+    transport = new DemoTransport(); transport.connect();
+    toast("Demo mode — nothing is sent to a MixPre");
+  }
+}
+
+/* ============================================================ Send / Listen audio
+   One browser sends (MixPre via USB-C or Line In), the others listen. Audio goes
+   browser-to-browser over WebRTC; the relay (or the Pi on its own network) only
+   introduces them. TURN from the relay makes it work on any network. */
+const Aud = {
+  myId: null, stream: null, sending: false, label: "", peers: {}, sender: null,
+  listenPc: null, listening: false, ctx: null, analysers: null, raf: 0, peaks: [0, 0], holds: [-90, -90], holdT: [0, 0],
+  ice: null, iceAt: 0,
+
+  // ---- signaling through the hub (relay room or the Pi)
+  hub() {
+    if (!transport) return null;
+    if (transport.kind === "Cloud") return o => transport.wsSend(o);
+    if (transport.kind === "Wi‑Fi") return o => transport.ws && transport.ws.readyState === 1 && transport.ws.send(JSON.stringify(o));
+    return null;
+  },
+  send(d, to) { const h = this.hub(); if (h) h({ t: "peer", to, d }); },
+  hello() { this.sender = null; this.send({ a: "who" }); this.render(); },
+
+  async iceServers() {
+    if (this.ice && Date.now() - this.iceAt < 3600e3) return this.ice;
+    let list = [{ urls: STUN }];
+    if (transport && transport.kind === "Cloud") {
+      try {
+        const k = accessKey();
+        const r = await fetch(`${httpBase(relayUrl())}/turn${k ? "?key=" + encodeURIComponent(k) : ""}`, { cache: "no-store" });
+        if (r.ok) { const d = await r.json(); if (Array.isArray(d.iceServers) && d.iceServers.length) list = d.iceServers; }
+      } catch {}
+    }
+    this.ice = list; this.iceAt = Date.now();
+    return list;
+  },
+  // Opus: stereo, 128 kbps, error resilience
+  tune(sdp) {
+    const m = sdp.match(/a=rtpmap:(\d+) opus\/48000\/2/i);
+    if (!m) return sdp;
+    const pt = m[1], extra = "stereo=1;sprop-stereo=1;maxaveragebitrate=128000;useinbandfec=1";
+    const re = new RegExp(`a=fmtp:${pt} ([^\\r\\n]*)`);
+    return re.test(sdp) ? sdp.replace(re, (_, p) => `a=fmtp:${pt} ${p};${extra}`) : sdp.replace(m[0], `${m[0]}\r\na=fmtp:${pt} ${extra}`);
+  },
+
+  onPeer(from, d) {
+    switch (d.a) {
+      case "who": if (this.sending) this.send({ a: "sender", label: this.label }, from); break;
+      case "sender": this.sender = { id: from, label: d.label || "Another device" }; this.render(); break;
+      case "sender_off":
+        if (this.sender && this.sender.id === from) { this.stopListening(true); this.sender = null; toast("The sender stopped sending audio"); this.render(); }
+        break;
+      case "listen": if (this.sending) this.offerTo(from); break;
+      case "left":   // that viewer closed the page
+        if (this.sender && this.sender.id === from) { this.stopListening(true); this.sender = null; this.render(); }
+        // falls through
+      case "bye": if (this.peers[from]) { try { this.peers[from].close(); } catch {} delete this.peers[from]; this.render(); } break;
+      case "offer": this.onOffer(from, d.sdp); break;
+      case "answer": if (this.peers[from]) this.peers[from].setRemoteDescription({ type: "answer", sdp: d.sdp }).catch(() => {}); break;
+      case "ice": {
+        const pc = this.peers[from] || (this.sender && this.sender.id === from ? this.listenPc : null);
+        if (pc && d.c) pc.addIceCandidate(d.c).catch(() => {});
+        break;
+      }
+    }
+  },
+
+  // ---- sending
+  async loadSources() {
+    const sel = $("srcSel");
+    try {
+      let devs = await navigator.mediaDevices.enumerateDevices();
+      if (!devs.some(d => d.kind === "audioinput" && d.label)) {   // labels need permission once
+        const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tmp.getTracks().forEach(t => t.stop());
+        devs = await navigator.mediaDevices.enumerateDevices();
+      }
+      const keep = sel.value || store.get("audioSrc", "");
+      sel.innerHTML = "";
+      devs.filter(d => d.kind === "audioinput").forEach(d => {
+        const o = document.createElement("option"); o.value = d.deviceId; o.textContent = d.label || "Input";
+        sel.append(o);
+      });
+      const mix = [...sel.options].find(o => /mixpre/i.test(o.textContent));
+      sel.value = [...sel.options].some(o => o.value === keep) ? keep : mix ? mix.value : (sel.options[0] || {}).value || "";
+    } catch (e) { toast("Microphone permission is needed to pick an input"); }
+  },
+  async startSending() {
+    if (!navigator.mediaDevices) return toast("This browser can't capture audio");
+    const id = $("srcSel").value;
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: {
+        deviceId: id ? { exact: id } : undefined, channelCount: { ideal: 2 }, sampleRate: { ideal: 48000 },
+        echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) { return toast("Couldn't open that input: " + (e.message || e.name)); }
+    store.set("audioSrc", id);
+    const opt = $("srcSel").selectedOptions[0];
+    this.label = (opt ? opt.textContent : "Audio") + (S.name ? "" : "");
+    this.sending = true;
+    this.meterFrom(this.stream);
+    this.send({ a: "sender", label: this.label });
+    if (!this.hub()) toast("Sending works over Wi‑Fi or the cloud connection (not Bluetooth)");
+    this.render();
+  },
+  stopSending() {
+    Object.values(this.peers).forEach(pc => { try { pc.close(); } catch {} });
+    this.peers = {};
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    this.stream = null; this.sending = false;
+    this.send({ a: "sender_off" });
+    if (!this.listening) this.meterStop();
+    this.render();
+  },
+  async offerTo(lid) {
+    if (!this.stream) return;
+    if (this.peers[lid]) { try { this.peers[lid].close(); } catch {} }
+    if (Object.keys(this.peers).length >= 6) return;
+    const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
+    this.peers[lid] = pc;
+    this.stream.getTracks().forEach(t => pc.addTrack(t, this.stream));
+    pc.onicecandidate = e => { if (e.candidate) this.send({ a: "ice", c: e.candidate.toJSON() }, lid); };
+    pc.onconnectionstatechange = () => {
+      if (["failed", "closed"].includes(pc.connectionState) && this.peers[lid] === pc) { delete this.peers[lid]; }
+      this.render();
+    };
+    try {
+      const sender = pc.getSenders()[0];
+      const p = sender.getParameters(); p.encodings = p.encodings && p.encodings.length ? p.encodings : [{}];
+      p.encodings[0].maxBitrate = 128000; await sender.setParameters(p).catch(() => {});
+    } catch {}
+    const offer = await pc.createOffer();
+    offer.sdp = this.tune(offer.sdp);
+    await pc.setLocalDescription(offer);
+    this.send({ a: "offer", sdp: pc.localDescription.sdp }, lid);
+    this.render();
+  },
+
+  // ---- listening
+  startListening() {
+    if (transport && transport.kind === "Demo" && this.stream) {   // demo: hear your own input
+      this.listening = true; this.play(this.stream); this.render(); return;
+    }
+    if (!this.sender) return toast("Nobody is sending yet");
+    this.ensureCtx();
+    this.listening = true;
+    this.send({ a: "listen" }, this.sender.id);
+    $("audioStatus").textContent = "Connecting audio…";
+    clearTimeout(this.listenTimer);
+    this.listenTimer = setTimeout(() => { if (this.listening && !(this.listenPc && this.listenPc.connectionState === "connected")) toast("Audio is taking a while — the networks may block it (add TURN to your relay)", 5000); }, 12000);
+  },
+  async onOffer(from, sdp) {
+    if (!this.listening || !this.sender || this.sender.id !== from) return;
+    if (this.listenPc) { try { this.listenPc.close(); } catch {} }
+    const pc = this.listenPc = new RTCPeerConnection({ iceServers: await this.iceServers() });
+    pc.ontrack = e => {
+      try { e.receiver.playoutDelayHint = 0.05; e.receiver.jitterBufferTarget = 50; } catch {}
+      this.play(e.streams[0] || new MediaStream([e.track]));
+    };
+    pc.onicecandidate = e => { if (e.candidate) this.send({ a: "ice", c: e.candidate.toJSON() }, from); };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "failed" && this.listenPc === pc && this.listening) { this.send({ a: "listen" }, from); }
+      this.render();
+    };
+    await pc.setRemoteDescription({ type: "offer", sdp });
+    const ans = await pc.createAnswer();
+    ans.sdp = this.tune(ans.sdp);
+    await pc.setLocalDescription(ans);
+    this.send({ a: "answer", sdp: pc.localDescription.sdp }, from);
+  },
+  play(stream) {
+    const el = this.el || (this.el = Object.assign(document.createElement("audio"), { autoplay: true, playsInline: true }));
+    el.srcObject = stream; el.volume = +$("volume").value;
+    el.play().catch(() => toast("Tap Listen again to allow audio"));
+    this.meterFrom(stream);
+    this.render();
+  },
+  stopListening(silent) {
+    this.listening = false;
+    if (this.listenPc) { try { this.listenPc.close(); } catch {} this.listenPc = null; }
+    if (this.el) this.el.srcObject = null;
+    if (!silent && this.sender) this.send({ a: "bye" }, this.sender.id);
+    if (this.sending) this.meterFrom(this.stream); else this.meterStop();
+    this.render();
+  },
+
+  // ---- meter (horizontal L/R, -60..0 dBFS, peak hold)
+  ensureCtx() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    return this.ctx;
+  },
+  meterFrom(stream) {
+    this.meterStop(true);
+    if (!stream) return;
+    const ctx = this.ensureCtx();
+    const src = ctx.createMediaStreamSource(stream);
+    const split = ctx.createChannelSplitter(2);
+    src.connect(split);
+    const mk = () => { const a = ctx.createAnalyser(); a.fftSize = 1024; return a; };
+    const L = mk(), R = mk();
+    split.connect(L, 0);
+    try { split.connect(R, 1); } catch { split.connect(R, 0); }
+    this.src = src; this.analysers = [L, R];
+    $("meter").hidden = false; $("meterScale").hidden = false;
+    const buf = new Float32Array(1024);
+    const draw = () => {
+      this.raf = requestAnimationFrame(draw);
+      const c = $("meter"), g = c.getContext("2d"), W = c.width, H = c.height;
+      g.clearRect(0, 0, W, H);
+      const now = performance.now();
+      this.analysers.forEach((a, i) => {
+        a.getFloatTimeDomainData(buf);
+        let pk = 0; for (let j = 0; j < buf.length; j++) { const v = Math.abs(buf[j]); if (v > pk) pk = v; }
+        const db = pk > 0 ? 20 * Math.log10(pk) : -90;
+        this.peaks[i] = Math.max(db, this.peaks[i] - 1.2);           // smooth fall
+        if (db >= this.holds[i] || now - this.holdT[i] > 1500) { this.holds[i] = db; this.holdT[i] = now; }
+        const x = d => Math.max(0, Math.min(1, (d + 60) / 60)) * W;
+        const y = i * (H / 2) + 4, h = H / 2 - 8;
+        g.fillStyle = "#1c1c1e"; g.fillRect(0, y, W, h);
+        const grad = g.createLinearGradient(0, 0, W, 0);
+        grad.addColorStop(0, "#30d158"); grad.addColorStop(0.7, "#30d158"); grad.addColorStop(0.8, "#ffd60a"); grad.addColorStop(0.9, "#ff9f0a"); grad.addColorStop(1, "#ff453a");
+        g.fillStyle = grad; g.fillRect(0, y, x(this.peaks[i]), h);
+        g.fillStyle = this.holds[i] > -1 ? "#ff453a" : "#fff"; g.fillRect(Math.max(0, x(this.holds[i]) - 3), y, 3, h);
+        g.fillStyle = "rgba(255,255,255,.5)"; g.font = "bold 18px -apple-system,sans-serif"; g.fillText(i ? "R" : "L", 8, y + h / 2 + 6);
+      });
+    };
+    draw();
+  },
+  meterStop(keepVisible) {
+    cancelAnimationFrame(this.raf); this.raf = 0;
+    try { this.src && this.src.disconnect(); } catch {}
+    this.src = null; this.analysers = null; this.peaks = [-90, -90]; this.holds = [-90, -90];
+    if (!keepVisible) { $("meter").hidden = true; $("meterScale").hidden = true; }
+  },
+
+  render() {
+    const n = Object.values(this.peers).filter(pc => pc.connectionState === "connected").length;
+    const st = $("audioStatus");
+    if (this.sending) st.innerHTML = `Sending <b>${escapeHtml(this.label)}</b> · ${n} listening`;
+    else if (this.listening) st.innerHTML = this.listenPc && this.listenPc.connectionState === "connected"
+      ? `Listening to <b>${escapeHtml(this.sender ? this.sender.label : "")}</b>` : (transport && transport.kind === "Demo" ? "Listening to your own input (demo)" : "Connecting audio…");
+    else st.innerHTML = this.sender ? `<b>${escapeHtml(this.sender.label)}</b> is sending — tap Listen` : (this.hub() ? "Nobody is sending audio right now." : "Listen works over Wi‑Fi or the cloud connection (not Bluetooth).");
+    $("listenBtn").textContent = this.listening ? "Stop listening" : "🎧 Listen";
+    $("listenBtn").classList.toggle("on", this.listening);
+    $("sendBtn").textContent = this.sending ? "Stop sending" : "Start sending";
+    $("sendBtn").classList.toggle("sending", this.sending);
+    $("srcSel").disabled = this.sending;
+    $("sendStatus").textContent = this.sending ? "Keep this page open while sending." : "";
+    $("audioPill").hidden = !(this.sending || this.listening);
+    $("audioPillText").textContent = this.sending ? `Sending · ${n}` : "Listening";
+  },
+  reset() {
+    if (this.sending) this.stopSending();
+    if (this.listening) this.stopListening(true);
+    this.sender = null; this.render();
+  },
+};
+function wireAudio() {
+  $("listenBtn").onclick = () => Aud.listening ? Aud.stopListening() : Aud.startListening();
+  $("sendBtn").onclick = () => Aud.sending ? Aud.stopSending() : Aud.startSending();
+  $("srcSel").addEventListener("focus", () => Aud.loadSources(), { once: true });
+  $("srcSel").addEventListener("pointerdown", () => Aud.loadSources(), { once: true });
+  $("volume").oninput = () => { if (Aud.el) Aud.el.volume = +$("volume").value; };
+  $("audioPill").onclick = () => { $("sheet").hidden = false; $("scrim").hidden = false; $("audioGroup").scrollIntoView({ block: "start" }); };
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", () => Aud.loadSources());
+  Aud.render();
+}
+
+function startCloud(r) {
+  if (transport) transport.disconnect();
+  transport = new CloudTransport(r);
+  transport.connect();
+}
+
+/* ============================================================ send helpers */
+const send = (...bytes) => transport && transport.send(new Uint8Array(bytes.flat()));
+const tapKey = (mods, ...keys) => send(OP.TAP_KEY, mods, keys);
+const tapCC = cc => send(OP.TAP_CC, cc);
+const combo = (mod, cc) => send(OP.COMBO, mod, cc);
+
+function needs(kind) {
+  if (kind === "midi" && !hasMidi()) { toast("Needs MIDI mode — switch USB mode in Settings"); return false; }
+  if (kind === "kb" && !hasKb()) { toast("Needs Keyboard mode — switch USB mode in Settings"); return false; }
+  return true;
+}
+
+// press-and-hold with heartbeat (server auto-releases if the connection drops)
+function bindHold(el, start, end) {
+  let timer = null, active = false;
+  const down = e => {
+    e.preventDefault(); if (active) return; active = true; el.classList.add("pressed");
+    if (start() === false) { active = false; el.classList.remove("pressed"); return; }
+    timer = setInterval(start, 400);
+    try { el.setPointerCapture(e.pointerId); } catch {}
+  };
+  const up = () => { if (!active) return; active = false; el.classList.remove("pressed"); clearInterval(timer); end(); };
+  el.addEventListener("pointerdown", down);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+  el.addEventListener("lostpointercapture", up);
+  el.addEventListener("contextmenu", e => e.preventDefault());
+}
+function holdCC(el, ccFn, kbFallback) {
+  bindHold(el,
+    () => {
+      if (hasMidi()) return send(OP.HOLD_CC, ccFn());
+      if (kbFallback) return kbFallback.start();
+      return needs("midi");
+    },
+    () => {
+      if (hasMidi()) send(OP.REL_CC, ccFn());
+      else if (kbFallback) kbFallback.end();
+    });
+}
+function holdKey(el, mods, key) {
+  bindHold(el, () => needs("kb") && send(OP.HOLD_KEY, mods, key), () => send(OP.REL_KEY));
+}
+// two-tap confirm for risky buttons
+function confirmTap(el, fn) {
+  el.addEventListener("click", () => {
+    if (el.classList.contains("confirm")) { el.classList.remove("confirm"); el.firstChild.textContent = el.dataset.orig; fn(); return; }
+    el.dataset.orig = el.firstChild.textContent;
+    el.classList.add("confirm"); el.firstChild.textContent = "Tap again";
+    setTimeout(() => { if (el.classList.contains("confirm")) { el.classList.remove("confirm"); el.firstChild.textContent = el.dataset.orig; } }, 2500);
+  });
+}
+
+/* ============================================================ slider */
+function makeSlider(orient, cc, levelIdx) {
+  const el = document.createElement("div");
+  el.className = `slider ${orient} unknown`; el.tabIndex = 0; el.setAttribute("role", "slider");
+  el.setAttribute("aria-valuemin", 0); el.setAttribute("aria-valuemax", 127);
+  el.innerHTML = '<div class="track"></div><div class="fill"></div><div class="thumb"></div>';
+  const fill = el.querySelector(".fill"), thumb = el.querySelector(".thumb");
+  const vEl = document.createElement("div"); vEl.className = "val";
+  let value = 0, dragging = false, last = 0, pending = null;
+  const PAD = 10;
+  function draw(v, known) {
+    value = v; el.classList.toggle("unknown", !known);
+    el.setAttribute("aria-valuenow", v);
+    const r = el.getBoundingClientRect();
+    const len = (orient === "v" ? r.height : r.width) - PAD * 2;
+    const px = (v / 127) * len;
+    if (orient === "v") { thumb.style.top = (PAD + len - px) + "px"; fill.style.height = px + "px"; }
+    else { thumb.style.left = (PAD + px) + "px"; fill.style.width = px + "px"; }
+    vEl.textContent = known ? Math.round(v / 1.27) + "%" : "—";
+  }
+  function emit(v) {
+    pending = v;
+    const now = performance.now();
+    if (now - last > 35) { last = now; send(OP.CC, cc(), pending); pending = null; }
+    else setTimeout(() => { if (pending !== null) { last = performance.now(); send(OP.CC, cc(), pending); pending = null; } }, 40);
+  }
+  function fromEvent(e) {
+    const r = el.getBoundingClientRect();
+    const t = orient === "v" ? (r.bottom - PAD - e.clientY) / (r.height - PAD * 2) : (e.clientX - r.left - PAD) / (r.width - PAD * 2);
+    return Math.max(0, Math.min(127, Math.round(t * 127)));
+  }
+  el.addEventListener("pointerdown", e => {
+    if (!needs("midi")) return;
+    dragging = true; el.setPointerCapture(e.pointerId);
+    const v = fromEvent(e); draw(v, true); emit(v);
+  });
+  el.addEventListener("pointermove", e => { if (!dragging) return; const v = fromEvent(e); if (v !== value) { draw(v, true); emit(v); } });
+  const stop = () => { dragging = false; };
+  el.addEventListener("pointerup", stop); el.addEventListener("pointercancel", stop);
+  el.addEventListener("keydown", e => {
+    const step = e.shiftKey ? 8 : 1;
+    let v = value;
+    if (["ArrowUp","ArrowRight"].includes(e.key)) v += step;
+    else if (["ArrowDown","ArrowLeft"].includes(e.key)) v -= step;
+    else return;
+    e.preventDefault(); if (!needs("midi")) return;
+    v = Math.max(0, Math.min(127, v)); draw(v, true); emit(v);
+  });
+  return {
+    el, vEl,
+    set(v) { if (dragging) return; draw(v === 255 ? 0 : v, v !== 255); },
+    redraw() { draw(value, !el.classList.contains("unknown")); },
+  };
+}
+
+/* ============================================================ channel strips */
+let strips = [];
+function buildStrips() {
+  const box = $("strips"); box.innerHTML = ""; strips = [];
+  const total = CH_COUNT[model] || model;
+  const n = Math.min(total, 8);
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement("div"); s.className = "strip";
+    const knob = makeSlider("h", () => CC.knob + i, 8 + i);
+    const fader = makeSlider("v", () => CC.fader + i, i);
+    s.innerHTML = `<div class="num">${i + 1}</div><div class="lbl">Knob</div>`;
+    s.append(knob.el, knob.vEl);
+    const fl = document.createElement("div"); fl.className = "lbl"; fl.textContent = "Fader"; s.append(fl, fader.el, fader.vEl);
+    const smr = document.createElement("div"); smr.className = "smr";
+    const mk = (cls, txt, title) => { const b = document.createElement("button"); b.className = "b " + cls; b.textContent = txt; b.title = title; smr.append(b); return b; };
+    const bS = mk("s", "S", "Solo"), bM = mk("m", "M", "Mute"), bR = mk("r", "R", "Record arm");
+    const ch = i + 1;
+    bS.onclick = () => hasMidi() ? tapCC(CC.solo + i) : needs("kb") && tapKey(MOD.ALT, DIGIT(ch));
+    bM.onclick = () => hasMidi() ? tapCC(CC.mute + i) : needs("kb") && tapKey(MOD.CTRL | MOD.ALT, DIGIT(ch));
+    bR.onclick = () => hasMidi() ? tapCC(CC.arm + i) : needs("kb") && tapKey(MOD.CTRL, DIGIT(ch));
+    const open = document.createElement("button"); open.className = "b open"; open.textContent = "Open ›";
+    open.onclick = () => hasKb() ? tapKey(0, DIGIT(ch)) : combo(CC.cycle, CC.solo + i);
+    s.append(smr, open);
+    box.append(s);
+    strips.push({ knob, fader, bS, bM, bR });
+  }
+  // channels beyond 8 (MixPre-10 II: 9, 10) and keyboard-only controls
+  const kb = $("kbChannels"); kb.innerHTML = "";
+  if (total > 8) {
+    for (let ch = 9; ch <= total; ch++) {
+      const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = `Ch ${ch}:`; kb.append(tag);
+      [["Open", 0], ["Solo", MOD.ALT], ["Mute", MOD.CTRL | MOD.ALT], ["Arm", MOD.CTRL]].forEach(([t, m]) => {
+        const b = document.createElement("button"); b.className = "b"; b.textContent = t;
+        b.onclick = () => needs("kb") && tapKey(m, DIGIT(ch)); kb.append(b);
+      });
+    }
+  }
+  requestAnimationFrame(() => { strips.forEach(st => { st.knob.redraw(); st.fader.redraw(); }); render(); });
+}
+
+function buildShortcuts() {
+  const box = $("userShortcuts"); box.innerHTML = "";
+  const combos = [CC.set, CC.markPrev, CC.markNext, CC.rew, CC.ff];
+  combos.forEach((cc, i) => {
+    const b = document.createElement("button"); b.className = "b";
+    b.innerHTML = `${escapeHtml(labels[i] || "U" + (i + 1))}<small>U${i + 1}</small>`;
+    b.onclick = () => needs("midi") && combo(CC.cycle, cc);
+    box.append(b);
+  });
+  const g = $("lblGrid"); g.innerHTML = "";
+  labels.forEach((l, i) => {
+    const lab = document.createElement("span"); lab.textContent = "U" + (i + 1);
+    const inp = document.createElement("input"); inp.type = "text"; inp.value = l; inp.maxLength = 16;
+    inp.oninput = () => { labels[i] = inp.value || "U" + (i + 1); store.set("labels", labels); buildShortcutsButtonsOnly(); };
+    g.append(lab, inp);
+  });
+}
+function buildShortcutsButtonsOnly() {
+  [...$("userShortcuts").children].forEach((b, i) => b.innerHTML = `${escapeHtml(labels[i])}<small>U${i + 1}</small>`);
+}
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+/* ============================================================ rendering */
+function setConn(cls, text) {
+  const p = $("connPill"); p.className = "pill " + cls; $("connText").textContent = text;
+}
+function showControl(on) {
+  $("connect").hidden = on; $("control").hidden = !on; $("usbPill").hidden = !on;
+  $("backBtn").hidden = !(on && !PI_SERVED && transport && transport.kind === "Cloud");
+}
+function applyState(m) {
+  for (const k of ["mode","midi","hid","usb","arm","mute","solo","transport","name","version"]) if (m[k] !== undefined) S[k] = m[k];
+  if (m.levels) S.levels = m.levels;
+  render();
+}
+function render() {
+  const recording = !$("control").hidden && hasMidi() && !!(S.transport & 16);
+  document.body.classList.toggle("recording", recording);
+  $("recPill").hidden = !recording;
+  $("brandSub").textContent = S.name ? S.name : "Not connected";
+  const u = $("usbPill");
+  if (!S.usb) { u.className = "pill bad"; $("usbText").textContent = "MixPre not detected"; }
+  else if (hasMidi() && !S.midi) { u.className = "pill warn"; $("usbText").textContent = "USB ok · MIDI waiting"; }
+  else { u.className = "pill ok"; $("usbText").textContent = "MixPre · " + S.mode; }
+  strips.forEach((st, i) => {
+    const bit = hasMidi() ? 1 << i : 0;   // no LED feedback in keyboard-only mode
+    st.bS.classList.toggle("on", !!(S.solo & bit));
+    st.bM.classList.toggle("on", !!(S.mute & bit));
+    st.bR.classList.toggle("on", !!(S.arm & bit));
+    st.fader.set(S.levels[i] ?? 255);
+    st.knob.set(S.levels[8 + i] ?? 255);
+  });
+  $("tPlay").classList.toggle("on", !!(S.transport & 1));
+  $("tRec").classList.toggle("on", !!(S.transport & 16));
+  $("chNote").textContent = hasMidi()
+    ? "Faders jump to the on‑screen position when touched · lit buttons = MixPre state"
+    : "Keyboard mode: S/M/R toggle with no feedback · faders need MIDI mode";
+  document.querySelectorAll("#strips .slider").forEach(e => e.parentElement.classList.toggle("nomidi", !hasMidi()));
+  document.querySelectorAll("#strips .slider").forEach(e => e.style.opacity = hasMidi() ? "" : ".3");
+  $("navPanel").classList.toggle("disabled-area", !hasKb());
+  $("userShortcuts").classList.toggle("disabled-area", !hasMidi());
+  document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", MODES[b.dataset.v] === S.mode));
+  document.querySelectorAll("#modelSeg button").forEach(b => b.classList.toggle("on", +b.dataset.v === model));
+  document.querySelectorAll("#starSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === starStyle));
+  $("devInfo").innerHTML = [
+    ["Name", S.name || "—"], ["Link", transport ? transport.label() : "—"], ["USB to MixPre", S.usb ? "connected" : "not detected"],
+    ["USB mode", S.mode], ["MIDI", S.midi ? "ready" : "—"], ["Keyboard", S.hid ? "ready" : "—"], ["Bridge version", S.version || "—"],
+  ].map(([k, v]) => `<span>${k}</span><span>${escapeHtml(v)}</span>`).join("");
+}
+
+/* ============================================================ log */
+function addLog(line) {
+  const box = $("logBox");
+  const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.textContent += line + "\n";
+  if (box.textContent.length > 40000) box.textContent = box.textContent.slice(-30000);
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+/* ============================================================ wire up */
+function wire() {
+  // transport (MIDI preferred, keyboard fallback)
+  holdCC($("tRew"), () => CC.rew, { start: () => needs("kb") && send(OP.HOLD_KEY, 0, KEY.LEFT), end: () => send(OP.REL_KEY) });
+  holdCC($("tFf"), () => CC.ff, { start: () => needs("kb") && send(OP.HOLD_KEY, 0, KEY.RIGHT), end: () => send(OP.REL_KEY) });
+  const tbtn = (id, ccName, kbMods, kbKey) => {
+    const el = $(id);
+    bindHold(el,
+      () => { if (hasMidi()) return send(OP.HOLD_CC, CC[ccName]); if (!el._sent && needs("kb")) { el._sent = true; tapKey(kbMods, kbKey); } return true; },
+      () => { if (hasMidi()) send(OP.REL_CC, CC[ccName]); el._sent = false; });
+  };
+  tbtn("tStop", "stop", MOD.CTRL, KEY.S);
+  tbtn("tPlay", "play", 0, KEY.SPACE);
+  tbtn("tRec", "rec", MOD.CTRL, KEY.R);
+  $("tCue").onclick = () => hasMidi() ? tapCC(CC.set) : needs("kb") && tapKey(MOD.CTRL, KEY.M);
+
+  // navigation keys
+  document.querySelectorAll("[data-hold]").forEach(el => holdKey(el, 0, KEY[el.dataset.hold]));
+  document.querySelectorAll("[data-tap]").forEach(el => el.addEventListener("click", () => {
+    if (!needs("kb")) return;
+    const k = el.dataset.tap;
+    if (k === "STAR") return starStyle === "kp" ? tapKey(0, KEY.KP_STAR) : tapKey(MOD.SHIFT, KEY.N8);
+    tapKey(0, KEY[k]);
+  }));
+  $("kbCue").onclick = () => needs("kb") && tapKey(MOD.CTRL, KEY.M);
+  confirmTap($("fileXfer"), () => needs("kb") && tapKey(MOD.CTRL, KEY.F));
+  confirmTap($("lockMenu"), () => needs("kb") && tapKey(0, DIGIT(1), DIGIT(2), DIGIT(3)));
+
+  // typing
+  const doType = () => {
+    if (!needs("kb")) return;
+    let t = $("typeText").value; if ($("typeEnter").checked) t += "\n";
+    const bytes = new TextEncoder().encode(t);
+    for (let i = 0; i < bytes.length; i += 18) send(OP.TYPE, [...bytes.slice(i, i + 18)]);
+    $("typeText").value = ""; toast("Typing on MixPre…");
+  };
+  $("typeBtn").onclick = doType;
+  $("typeText").addEventListener("keydown", e => { if (e.key === "Enter") doType(); });
+
+  // settings sheet
+  const openSheet = on => { $("sheet").hidden = !on; $("scrim").hidden = !on; };
+  $("settingsBtn").onclick = () => openSheet(true);
+  $("closeSheet").onclick = $("scrim").onclick = () => openSheet(false);
+  $("disconnectBtn").onclick = () => { Aud.reset(); setSearching(false); if (transport) transport.disconnect(); transport = null; S.name = ""; setConn("", "Offline"); showControl(false); openSheet(false); render(); };
+  document.querySelectorAll("#modelSeg button").forEach(b => b.onclick = () => { model = +b.dataset.v; store.set("model", model); buildStrips(); });
+  document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => {
+    if (!transport) return toast("Connect first");
+    send(OP.MODE, +b.dataset.v); toast("Switching USB mode… (MixPre will re-detect the device)", 3500);
+  });
+  document.querySelectorAll("#starSeg button").forEach(b => b.onclick = () => { starStyle = b.dataset.v; store.set("star", starStyle); render(); });
+  $("copyLog").onclick = async () => { try { await navigator.clipboard.writeText($("logBox").textContent); toast("Log copied"); } catch { toast("Copy failed — select the text manually"); } };
+  $("clearLog").onclick = () => $("logBox").textContent = "";
+  $("rawSend").onclick = () => {
+    const bytes = $("rawMidi").value.trim().split(/[\s,]+/).filter(Boolean).map(h => parseInt(h, 16));
+    if (!bytes.length || bytes.some(b => isNaN(b) || b < 0 || b > 255) || bytes.length > 19) return toast("Enter up to 19 hex bytes, e.g. B0 2D 7F");
+    send(OP.RAW, bytes);
+  };
+  $("ccMap").value = JSON.stringify(CC, null, 1);
+  $("ccSave").onclick = () => {
+    try { const m = JSON.parse($("ccMap").value); CC = Object.assign({}, DEFAULT_CC, m); store.set("ccmap", m); buildStrips(); buildShortcuts(); toast("CC map saved"); }
+    catch { toast("Invalid JSON"); }
+  };
+  $("ccReset").onclick = () => { CC = Object.assign({}, DEFAULT_CC); store.set("ccmap", {}); $("ccMap").value = JSON.stringify(CC, null, 1); buildStrips(); buildShortcuts(); toast("CC map reset"); };
+
+  // connect (manual pick — needed once per browser, or to choose a different remote)
+  $("findBtn").onclick = async () => {
+    try {
+      const t = new BleTransport();
+      $("findBtn").disabled = true;
+      await t.connect();
+      if (transport && transport !== t) transport.disconnect();
+      transport = t; render();
+    } catch (e) {
+      if (e && e.name !== "NotFoundError") toast("Couldn't connect: " + (e.message || e), 4000);
+      if (!transport) setConn("", "Offline");
+    } finally { $("findBtn").disabled = false; }
+  };
+  window.addEventListener("resize", () => strips.forEach(st => { st.knob.redraw(); st.fader.redraw(); }));
+}
+
+/* ============================================================ Pi Wi-Fi + remote access settings */
+let openNet = null;
+function renderNet() {
+  const n = S.net;
+  $("cloudVal").textContent = !n ? "—" : !n.relay_url ? "Relay URL not set" : n.cloud ? `Connected${n.cloud_viewers ? " · " + n.cloud_viewers + " viewer(s)" : ""}` : "Not connected (no internet?)";
+  if (document.activeElement !== $("relaySet")) $("relaySet").value = (n && n.relay_url) || relayUrl() || "";
+  if (document.activeElement !== $("nameSet")) $("nameSet").value = (n && n.name) || "";
+  if (document.activeElement !== $("keySet")) $("keySet").value = accessKey();
+  if (!n) { $("wifiStatus").textContent = "—"; return; }
+  const conn = { full: "internet ✓", portal: "needs a sign‑in page", limited: "no internet", none: "no internet", unknown: "" }[n.connectivity] || "";
+  $("wifiStatus").innerHTML =
+    n.mode === "hotspot" ? `Hosting <b>${escapeHtml(n.hotspot_ssid)}</b> (${n.hotspot_mode === "captive" ? "pop‑up page" : "local‑only"})`
+    : n.mode === "client" ? `Joined <b>${escapeHtml(n.ssid)}</b> · ${escapeHtml(n.ip || "")}${conn ? " · " + conn : ""}`
+    : n.mode === "switching" ? `Switching… ${escapeHtml(n.message || "")}` : "Unknown";
+  let msg = n.mode !== "switching" ? (n.message || "") : "";
+  if (n.mode === "client" && n.connectivity === "portal")
+    msg = "This network needs a sign‑in page, which the Pi can't open. Use your phone's Personal Hotspot instead, or register the Pi's device address below with the venue.";
+  $("wifiMsg").hidden = !msg; $("wifiMsg").textContent = msg;
+  $("macVal").textContent = n.mac || "—";
+  document.querySelectorAll("#hsSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === (n.hotspot_mode || "local")));
+  // scan results
+  const list = $("wifiList"); list.innerHTML = "";
+  (n.networks || []).forEach(net => list.append(netRow(net.ssid, `${net.signal}%${net.secure ? " · 🔒" : ""}`, net.secure, false)));
+  const saved = $("wifiSaved"); saved.innerHTML = "";
+  (n.saved || []).forEach(ssid => saved.append(netRow(ssid, "remembered", false, true)));
+  $("savedLabel").hidden = !(n.saved || []).length;
+}
+function netRow(ssid, meta, secure, isSaved) {
+  const row = document.createElement("div"); row.className = "netrow";
+  row.innerHTML = `<div class="top"><span class="nm"></span><span class="meta"></span></div>`;
+  row.querySelector(".nm").textContent = ssid; row.querySelector(".meta").textContent = meta;
+  const key = (isSaved ? "s:" : "n:") + ssid;
+  const top = row.querySelector(".top");
+  top.onclick = () => { openNet = openNet === key ? null : key; renderNet(); };
+  if (openNet === key) {
+    const f = document.createElement("form");
+    if (secure) f.innerHTML = `<input type="password" placeholder="Password" autocomplete="off">`;
+    f.innerHTML += `<button class="b" type="submit">Join</button>` + (isSaved ? `<button class="b" type="button" data-forget>Forget</button>` : "");
+    f.onsubmit = e => { e.preventDefault(); const pw = f.querySelector("input"); joinWifi(ssid, pw ? pw.value : ""); };
+    const fg = f.querySelector("[data-forget]");
+    if (fg) fg.onclick = () => { sendJson({ op: "wifi_forget", ssid }); openNet = null; };
+    row.append(f);
+    setTimeout(() => { const i = f.querySelector("input"); if (i) i.focus(); }, 0);
+  }
+  return row;
+}
+function joinWifi(ssid, psk) {
+  if (psk && psk.length < 8) return toast("Wi‑Fi passwords are at least 8 characters");
+  sendJson({ op: "wifi_join", ssid, psk: psk || undefined });
+  openNet = null;
+  const onHotspot = S.net && S.net.mode === "hotspot" && transport && transport.kind === "Wi‑Fi";
+  toast(onHotspot
+    ? `The Pi is joining “${ssid}”. Join “${ssid}” on this device too — then open mixpre.local or your control page.`
+    : `The Pi is joining “${ssid}”… if it fails it goes back to its own hotspot.`, 7000);
+}
+function wireNet() {
+  $("wifiScan").onclick = () => { sendJson({ op: "wifi_scan" }); toast("Scanning…"); };
+  confirmTap($("wifiHotspot"), () => sendJson({ op: "hotspot" }));
+  document.querySelectorAll("#hsSeg button").forEach(b => b.onclick = () => sendJson({ op: "hotspot_mode", mode: b.dataset.v }));
+  $("relaySave").onclick = () => {
+    const url = $("relaySet").value.trim();
+    store.set("relay", url);
+    if (remote) { remote.relay = url; store.set("remote", remote); }
+    sendJson({ op: "set_relay", url }); toast(url ? "Relay URL saved" : "Relay URL cleared");
+  };
+  $("nameSave").onclick = () => { sendJson({ op: "set_name", name: $("nameSet").value.trim() }); toast("Name saved"); };
+  $("keySave").onclick = () => { store.set("key", $("keySet").value); toast("Access key saved on this browser"); };
+}
+
+/* ============================================================ list of online remotes (hosted page) */
+let listTimer = null, listBusy = false;
+async function refreshList() {
+  if (PI_SERVED || listBusy || !$("control").hidden || document.hidden) return;
+  const relay = relayUrl();
+  if (!relay) { showSetup("Enter your relay URL (and access key) once to see your remotes."); return; }
+  listBusy = true;
+  try {
+    const k = accessKey();
+    const r = await fetch(`${httpBase(relay)}/list${k ? "?key=" + encodeURIComponent(k) : ""}`, { cache: "no-store" });
+    if (r.status === 401) { showSetup(accessKey() ? "That access key didn't work." : "Enter your access key to see your remotes."); return; }
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    $("setupForm").hidden = true;
+    renderList(data.pis || []);
+  } catch {
+    $("piList").innerHTML = "";
+    $("listStatus").textContent = navigator.onLine === false ? "No internet." : "Can't reach your relay right now — retrying…";
+  } finally { listBusy = false; }
+}
+function showSetup(msg) {
+  $("piList").innerHTML = "";
+  $("listStatus").textContent = msg;
+  $("setupForm").hidden = false;
+  if (!$("relayInput").value) $("relayInput").value = relayUrl();
+}
+function renderList(pis) {
+  const box = $("piList"); box.innerHTML = "";
+  const lastCode = remote && remote.code;
+  // On your network first, then the one you used last, then by name
+  pis = pis.slice().sort((a, b) =>
+    (b.sameNetwork - a.sameNetwork) || ((b.code === lastCode) - (a.code === lastCode)) ||
+    String(a.name || "").localeCompare(String(b.name || "")));
+  const hasLocal = pis.some(p => p.sameNetwork), hasOther = pis.some(p => !p.sameNetwork);
+  pis.forEach((p, i) => {
+    if (hasLocal && hasOther && (i === 0 || pis[i - 1].sameNetwork !== p.sameNetwork)) {
+      const h = document.createElement("div"); h.className = "small";
+      h.style.cssText = "margin:6px 2px 0;font-weight:600";
+      h.textContent = p.sameNetwork ? "On your network" : "Elsewhere";
+      box.append(h);
+    }
+    const b = document.createElement("button");
+    b.className = "pi" + (p.code === lastCode ? " last" : "");
+    b.innerHTML = `<span class="ic"><svg width="18" height="18" viewBox="0 0 32 32"><rect x="5" y="6" width="3.5" height="20" rx="1.75" fill="#fff"/><rect x="14.25" y="11" width="3.5" height="15" rx="1.75" fill="#fff"/><rect x="23.5" y="4" width="3.5" height="22" rx="1.75" fill="#ff3b30"/></svg></span>
+      <span class="tx"><div class="nm"></div><div class="sub"></div></span><span class="chev">›</span>`;
+    b.querySelector(".nm").textContent = p.name || "MixPre Remote";
+    const sub = b.querySelector(".sub");
+    if (p.sameNetwork) { const s = document.createElement("span"); s.className = "badge"; s.textContent = "● On your network"; sub.append(s); }
+    sub.append(document.createTextNode(p.wifi ? `Wi‑Fi: ${p.wifi}` : "Online"));
+    b.onclick = () => {
+      remote = { code: p.code, relay: relayUrl(), name: p.name || "" };
+      store.set("remote", remote);
+      startCloud(remote);
+    };
+    box.append(b);
+  });
+  $("listStatus").textContent = pis.length ? "Click one to control it." : "None online right now. A Pi shows up here once it has internet (it can take ~30 s after joining Wi‑Fi).";
+}
+function startListPolling() {
+  if (PI_SERVED) return;
+  clearInterval(listTimer);
+  refreshList();
+  listTimer = setInterval(refreshList, 5000);
+}
+function backToList() {
+  Aud.reset();
+  if (transport) transport.disconnect();
+  transport = null; S.name = ""; S.net = null;
+  setSearching(false); setConn("", "Offline"); showControl(false); render();
+  refreshList();
+}
+
+/* ============================================================ connecting indicator */
+function setSearching(on, text) {
+  $("searching").hidden = !on;
+  if (text) $("searchText").textContent = text;
+}
+
+/* ============================================================ boot */
+wire();
+buildStrips();
+buildShortcuts();
+render();
+wireNet();
+wireAudio();
+$("verTap").addEventListener("click", verTap);
+$("aboutLine").addEventListener("click", verTap);
+if (PI_SERVED) {
+  // Opened from the Pi itself (hotspot / mixpre.local) -> plain WebSocket, works in every browser
+  $("choices").hidden = true;
+  setSearching(true, "Connecting over Wi‑Fi…");
+  transport = new WsTransport();
+  transport.connect();
+} else {
+  // Hosted page (e.g. mixpre.asahina.me)
+  $("bleBox").hidden = !navigator.bluetooth;
+  $("setupForm").onsubmit = e => {
+    e.preventDefault();
+    const relay = $("relayInput").value.trim();
+    if (!relay) { $("relayInput").focus(); return toast("Enter your relay URL"); }
+    store.set("relay", relay);
+    store.set("key", $("keyInput").value);
+    $("listStatus").textContent = "Looking…";
+    refreshList();
+  };
+  $("backBtn").onclick = backToList;
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshList(); });
+  startListPolling();
+  // No internet on a laptop usually means it just joined the MixPre's Wi-Fi -> point at the local page
+  let fails = 0;
+  setInterval(async () => {
+    if (!$("control").hidden) { fails = 0; $("noNetHint").hidden = true; return; }
+    try { await fetch(location.pathname + "?ping=" + Date.now(), { method: "HEAD", cache: "no-store" }); fails = 0; }
+    catch { fails++; }
+    $("noNetHint").hidden = fails < 1;
+  }, 4000);
+}
+</script>
+</body>
+</html>
