@@ -1,0 +1,42 @@
+name: Build MixPre Remote image
+
+# Run it from the Actions tab ("Run workflow"), or push a tag like v1.0
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static binfmt-support parted xz-utils e2fsprogs dosfstools curl openssl util-linux
+          sudo systemctl restart systemd-binfmt || true
+          ls /proc/sys/fs/binfmt_misc/
+
+      - name: Build image (about 15-25 minutes)
+        run: sudo -E bash image/build-image.sh
+
+      - name: Publish to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: image-${{ github.run_number }}
+          name: MixPre Remote image ${{ github.run_number }}
+          body: |
+            Ready-to-flash MixPre Remote image for Raspberry Pi Zero 2 W.
+            1. Download the .img.xz below.
+            2. Raspberry Pi Imager: Device = Raspberry Pi Zero 2 W, OS = Use Custom (pick this file), choose your SD card.
+            3. When Imager asks to apply OS customisation, choose NO.
+            Login (SSH over the Pi's hotspot): mixpre / mixpreremote
+          files: |
+            out/*.img.xz
+            out/*.sha256
