@@ -1,0 +1,13 @@
+[Unit]
+Description=MixPre Remote Wi-Fi (join a remembered network, else start the hotspot)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+TimeoutStartSec=180
+ExecStart=/usr/bin/python3 /opt/mixpre-remote/mixpre_net.py boot
+
+[Install]
+WantedBy=multi-user.target

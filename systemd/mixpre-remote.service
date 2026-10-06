@@ -1,0 +1,14 @@
+[Unit]
+Description=MixPre Remote bridge (Bluetooth + Wi-Fi web control)
+After=bluetooth.service mixpre-gadget.service
+Wants=bluetooth.service
+
+[Service]
+ExecStartPre=-/usr/sbin/rfkill unblock all
+ExecStartPre=-/usr/bin/bluetoothctl power on
+ExecStart=/opt/mixpre-remote/venv/bin/python /opt/mixpre-remote/mixpre_remote.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

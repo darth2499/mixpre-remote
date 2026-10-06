@@ -1,0 +1,40 @@
+{
+  "name": "",
+  "wifi_password": "mixpreremote",
+  "wifi_channel": 6,
+  "hotspot_mode": "local",
+  "wifi_auto_join": true,
+  "relay_url": "",
+  "remote_code": "",
+  "mode": "both",
+  "midi_channel": 1,
+  "verbose_log": false,
+  "sysex_replies": [
+    {
+      "name": "Universal Device Inquiry",
+      "match": "F0 7E ?? 06 01 F7",
+      "reply": "F0 7E 00 06 02 42 13 01 00 00 01 00 01 00 F7"
+    },
+    {
+      "name": "Korg Search Device",
+      "match": "F0 42 50 00 ?? F7",
+      "reply": "F0 42 50 01 00 $1 13 01 00 00 01 00 01 00 F7"
+    },
+    {
+      "name": "Scene upload to controller",
+      "match": "F0 42 4? 00 01 13 00 7F *",
+      "reply": "F0 42 40 00 01 13 00 5F 23 00 F7",
+      "store_scene": true
+    },
+    {
+      "name": "Scene write request",
+      "match": "F0 42 4? 00 01 13 00 1F 11 *",
+      "reply": "F0 42 40 00 01 13 00 5F 21 00 F7"
+    },
+    {
+      "name": "Scene dump request",
+      "match": "F0 42 4? 00 01 13 00 1F 10 *",
+      "reply": "SCENE"
+    }
+  ]
+}

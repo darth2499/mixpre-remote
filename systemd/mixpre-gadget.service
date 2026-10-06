@@ -1,0 +1,13 @@
+[Unit]
+Description=MixPre Remote USB gadget (keyboard + nanoKONTROL2)
+DefaultDependencies=no
+After=local-fs.target sys-kernel-config.mount
+Before=mixpre-remote.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /opt/mixpre-remote/gadget.sh auto
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,7 @@
+[Unit]
+Description=MixPre Remote hotspot DHCP (started by mixpre_net.py)
+
+[Service]
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/run/mixpre-remote/dnsmasq.conf --pid-file=/run/mixpre-remote/dnsmasq.pid
+Restart=on-failure
+RestartSec=2

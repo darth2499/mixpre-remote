@@ -1,0 +1,28 @@
+name = "mixpre-relay"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[durable_objects.bindings]]
+name = "DIRECTORY"
+class_name = "Directory"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]   # SQLite-backed Durable Objects work on the free plan
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Directory"]
+
+[vars]
+# Optional: only let your control page connect, e.g. "https://mixpre.asahina.me"
+ALLOWED_ORIGINS = ""
+
+# Access key: set it as a secret (not here) so only you can see and control your Pis:
+#   GitHub repo secret MIXPRE_ACCESS_KEY (the deploy action uploads it), or
+#   npx wrangler secret put ACCESS_KEY
