@@ -19,23 +19,48 @@ apt-get install -y --no-install-recommends \
 apt-get install -y --no-install-recommends python3-aiortc || echo "  (python3-aiortc not in apt - will try pip)"
 
 echo "==> Installing MixPre Remote to $DEST"
-mkdir -p "$DEST/web"
-install -m 755 "$SRC/server/mixpre_remote.py" "$SRC/server/mixpre_net.py" "$SRC/server/mixpre_cloud.py" "$SRC/server/gadget.sh" "$DEST/"
-install -m 644 "$SRC/web/index.html" "$DEST/web/"
+# The app lives in releases/<build>/ with "current" pointing at it, so it can update itself.
+mkdir -p "$DEST/releases"
+BTMP="$(mktemp -d)"
+bash "$SRC/image/make-bundle.sh" "$BTMP"
+BUILD_ID=$(python3 -c "import json,sys;m=json.load(open(sys.argv[1]));print(f\"{m['ct']}-{m['commit']}\")" "$BTMP/manifest.json")
+REL="$DEST/releases/$BUILD_ID"
+rm -rf "$REL"; mkdir -p "$REL"
+tar -xzf "$BTMP/mixpre-app.tar.gz" -C "$REL"
+rm -rf "$BTMP"
+# older installs kept the app files directly in $DEST
+rm -f "$DEST"/mixpre_remote.py "$DEST"/mixpre_net.py "$DEST"/mixpre_cloud.py "$DEST"/gadget.sh; rm -rf "$DEST/web"
+ln -sfn "$REL" "$DEST/current"
+install -m 755 "$SRC/server/mixpre_guard.py" "$DEST/guard.py"
+install -m 644 "$SRC/image/SYSTEM_LEVEL" "$DEST/SYSTEM_LEVEL"
 [ -x "$DEST/venv/bin/python" ] || python3 -m venv --system-site-packages "$DEST/venv"
-"$DEST/venv/bin/pip" install --no-cache-dir --upgrade "bless>=0.2.6"
-"$DEST/venv/bin/python" -c "import aiortc" 2>/dev/null || "$DEST/venv/bin/pip" install --no-cache-dir aiortc || echo "  (aiortc unavailable: remote access will use the relay only)"
+DPKG_ARCH="$(dpkg --print-architecture)"
+if [ "$DPKG_ARCH" = armhf ]; then
+  # original Pi Zero W (ARMv6): use pure-Python dbus-fast instead of compiling it
+  SKIP_CYTHON=1 "$DEST/venv/bin/pip" install --no-cache-dir --upgrade "bless>=0.2.6"
+else
+  "$DEST/venv/bin/pip" install --no-cache-dir --upgrade "bless>=0.2.6"
+fi
+if ! "$DEST/venv/bin/python" -c "import aiortc" 2>/dev/null; then
+  if [ "$DPKG_ARCH" = armhf ]; then
+    echo "  (aiortc not in apt for ARMv6 - remote access will use the cloud relay, no direct links)"
+  else
+    "$DEST/venv/bin/pip" install --no-cache-dir aiortc || echo "  (aiortc unavailable: remote access will use the relay only)"
+  fi
+fi
 
 [ -f "$BOOT/mixpre-remote.json" ] || install -m 644 "$SRC/mixpre-remote.json" "$BOOT/mixpre-remote.json"
 if [ -n "${MIXPRE_WIFI_PASSWORD:-}" ]; then
   [ ${#MIXPRE_WIFI_PASSWORD} -ge 8 ] || { echo "Wi-Fi password must be 8+ characters"; exit 1; }
-  python3 - "$BOOT/mixpre-remote.json" "$MIXPRE_WIFI_PASSWORD" <<'PY'
+fi
+python3 - "$BOOT/mixpre-remote.json" "${MIXPRE_WIFI_PASSWORD:-}" "${MIXPRE_UPDATE_REPO:-}" <<'PY'
 import json, sys
-p, pw = sys.argv[1], sys.argv[2]
-c = json.load(open(p)); c["wifi_password"] = pw
+p, pw, repo = sys.argv[1], sys.argv[2], sys.argv[3]
+c = json.load(open(p))
+if pw: c["wifi_password"] = pw
+if repo and not c.get("update_repo"): c["update_repo"] = repo   # where updates come from
 open(p, "w").write(json.dumps(c, indent=2))
 PY
-fi
 
 echo "==> USB device (gadget) mode"
 grep -q '^dtoverlay=dwc2' "$BOOT/config.txt" || printf '\n[all]\ndtoverlay=dwc2,dr_mode=peripheral\n' >> "$BOOT/config.txt"
