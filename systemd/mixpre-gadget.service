@@ -7,7 +7,7 @@ Before=mixpre-remote.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/bash /opt/mixpre-remote/gadget.sh auto
+ExecStart=/bin/bash /opt/mixpre-remote/current/gadget.sh auto
 
 [Install]
 WantedBy=sysinit.target

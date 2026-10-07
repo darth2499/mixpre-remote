@@ -7,7 +7,7 @@ Wants=NetworkManager.service
 Type=oneshot
 RemainAfterExit=yes
 TimeoutStartSec=180
-ExecStart=/usr/bin/python3 /opt/mixpre-remote/mixpre_net.py boot
+ExecStart=/usr/bin/python3 /opt/mixpre-remote/current/mixpre_net.py boot
 
 [Install]
 WantedBy=multi-user.target

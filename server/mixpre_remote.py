@@ -24,8 +24,11 @@ from aiohttp import web, WSMsgType
 
 from mixpre_net import Net
 
-VERSION = "0.2.0"
 APP_DIR = Path(__file__).resolve().parent
+try:   # set by the update bundle / image build
+    VERSION = json.loads((APP_DIR / "BUILD.json").read_text()).get("version", "dev")
+except (OSError, ValueError):
+    VERSION = "0.3.0-dev"
 WEB_DIR = APP_DIR / "web"
 GADGET_SH = APP_DIR / "gadget.sh"
 AP_IP = "192.168.4.1"
@@ -57,6 +60,9 @@ DEFAULT_CONFIG = {
     "wifi_auto_join": True,
     "relay_url": "",              # e.g. https://mixpre-relay.<you>.workers.dev
     "remote_code": "",            # generated on first start
+    "update_repo": "",            # GitHub "owner/repo" to get app updates from
+    "update_token": "",           # only for private repos (read-only token)
+    "update_auto": False,         # install updates at start-up before first use
     "mode": "both",
     "midi_channel": 1,
     "verbose_log": False,
@@ -459,6 +465,9 @@ class Bridge:
         self.ble = Ble(self)
         self.net = None
         self.cloud = None
+        self.updater = None
+        self.cmd_count = 0
+        self.started_at = time.monotonic()
         self.version = VERSION
         self._net_pending = False
         self._last_hello = None
@@ -581,6 +590,7 @@ class Bridge:
             "cloud_viewers": self.cloud.viewers if self.cloud else 0,
             "direct": bool(self.cloud and self.cloud.peers),
             "saved": self.config.get("wifi_recent", []),
+            "update": self.updater.status_json() if self.updater else None,
         })
         return n
 
@@ -660,6 +670,27 @@ class Bridge:
             self.emit_log("New remote code generated (old one no longer works)")
             if self.cloud:
                 self.cloud.restart()
+            self.net_changed()
+        elif op == "update_check" and self.updater:
+            asyncio.ensure_future(self.updater.check(manual=True))
+        elif op == "update_install" and self.updater:
+            asyncio.ensure_future(self.updater.install())
+        elif op == "update_rollback" and self.updater:
+            asyncio.ensure_future(self.updater.rollback())
+        elif op == "update_dismiss" and self.updater:
+            self.updater.notice = ""
+            self.net_changed()
+        elif op == "update_settings":
+            if "repo" in m:
+                self.config["update_repo"] = str(m.get("repo") or "").strip()[:100]
+            if m.get("token") is not None:
+                self.config["update_token"] = str(m.get("token") or "").strip()[:200]
+            if "auto" in m:
+                self.config["update_auto"] = bool(m.get("auto"))
+            self.save_config()
+            self.emit_log("Update settings saved")
+            if self.updater and ("repo" in m or m.get("token") is not None):
+                asyncio.ensure_future(self.updater.check(manual=True))
             self.net_changed()
         elif op == "set_name":
             self.config["name"] = str(m.get("name") or "")[:20]
@@ -745,6 +776,8 @@ class Bridge:
         return ok
 
     async def dispatch(self, d):
+        if d and d[0] not in (0x30,):
+            self.cmd_count += 1
         op = d[0]
         if op == 0x01:                                    # tap key combo
             await self.kb.tap(d[1], list(d[2:8]))
@@ -937,6 +970,13 @@ class Bridge:
             await self.net.refresh()
         asyncio.ensure_future(self.net.watchdog())
         # Cloud relay + direct (WebRTC) connections; imported late so USB/Bluetooth come up first
+        try:
+            from mixpre_update import Updater
+            self.updater = Updater(self)
+            if not self.fake or os.environ.get("MIXPRE_BASE"):
+                asyncio.ensure_future(self.updater.loop())
+        except Exception as e:  # noqa
+            log.warning("Updater disabled: %s", e)
         try:
             from mixpre_cloud import Cloud, HAVE_RTC
             self.cloud = Cloud(self)

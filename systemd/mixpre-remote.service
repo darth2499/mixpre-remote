@@ -2,11 +2,14 @@
 Description=MixPre Remote bridge (Bluetooth + Wi-Fi web control)
 After=bluetooth.service mixpre-gadget.service
 Wants=bluetooth.service
+# keep restarting (an update guard decides when to roll back)
+StartLimitIntervalSec=0
 
 [Service]
 ExecStartPre=-/usr/sbin/rfkill unblock all
 ExecStartPre=-/usr/bin/bluetoothctl power on
-ExecStart=/opt/mixpre-remote/venv/bin/python /opt/mixpre-remote/mixpre_remote.py
+ExecStartPre=-/usr/bin/python3 /opt/mixpre-remote/guard.py
+ExecStart=/opt/mixpre-remote/venv/bin/python /opt/mixpre-remote/current/mixpre_remote.py
 Restart=always
 RestartSec=2
 

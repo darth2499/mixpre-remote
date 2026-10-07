@@ -8,6 +8,7 @@ set -euo pipefail
 SRC="$(cd "$(dirname "$0")" && pwd)"
 
 bash "$SRC/image/setup-rootfs.sh"
+systemctl daemon-reload || true
 command -v raspi-config >/dev/null && [ -z "$(raspi-config nonint get_wifi_country 2>/dev/null || true)" ] \
   && raspi-config nonint do_wifi_country "${MIXPRE_COUNTRY:-US}" || true
 

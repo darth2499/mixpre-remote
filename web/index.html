@@ -172,7 +172,7 @@ body.recording .recglow{opacity:1;animation:recpulse 2.4s ease-in-out infinite}
 
 .shortcuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .typer{display:flex;gap:8px;margin-top:8px}
-input[type=text],textarea,select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input[type=text],input[type=password],textarea,select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
 textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 label.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:8px}
 
@@ -402,6 +402,25 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut
     <div class="seg" id="starSeg"><button data-v="kp">Keypad *</button><button data-v="shift8">Shift + 8</button></div>
   </div>
 
+  <div class="group" id="swGroup" hidden>
+    <h4>Software</h4>
+    <div class="kv"><span>Installed</span><span id="swInstalled">—</span></div>
+    <div class="warnbox" id="swNotice" hidden style="margin-top:10px"></div>
+    <div class="wifistatus" id="swStatus" style="margin-top:10px">—</div>
+    <div class="row">
+      <button class="b" id="swCheck">Check for updates</button>
+      <button class="b" id="swInstall" data-confirm hidden>Install update</button>
+    </div>
+    <div class="row"><button class="b" id="swRollback" data-confirm hidden>Go back to previous version</button></div>
+    <div class="sublabel">Install updates</div>
+    <div class="seg" id="swAuto"><button data-v="0">When I tap Install</button><button data-v="1">Automatically at start‑up</button></div>
+    <p class="small" style="margin-top:6px">Automatic installs only happen right after the Pi starts, before anyone uses it — never mid‑session or while recording.</p>
+    <div class="sublabel">GitHub repo</div>
+    <div class="typer"><input type="text" id="swRepo" placeholder="yourname/mixpre-remote" spellcheck="false"><button class="b" id="swRepoSave">Save</button></div>
+    <div class="sublabel">GitHub token (private repos only)</div>
+    <div class="typer"><input type="password" id="swToken" placeholder="read-only token" autocomplete="off"><button class="b" id="swTokenSave">Save</button></div>
+  </div>
+
   <div class="group">
     <h4>MIDI / USB log</h4>
     <p>Shows what the MixPre sends back (LED feedback, SysEx handshake). Copy this if something doesn't work.</p>
@@ -501,7 +520,25 @@ function applyNet(n) {
     const r = { code: n.code, relay, name: n.name || "" };
     if (!remote || remote.code !== r.code || remote.relay !== r.relay || remote.name !== r.name) { remote = r; store.set("remote", r); }
   }
-  renderNet(); render();
+  renderNet(); renderSoftware(n.update); render();
+}
+function renderSoftware(u) {
+  $("swGroup").hidden = !u;
+  if (!u) return;
+  const date = ct => ct ? new Date(ct * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+  const i = u.installed || {};
+  $("swInstalled").textContent = `${i.version || "?"}${i.ct ? " · " + date(i.ct) : ""}${i.commit && i.commit !== "dev" ? " · " + i.commit : ""}`;
+  $("swNotice").hidden = !u.notice; $("swNotice").textContent = u.notice || "";
+  const a = u.available;
+  const icon = { uptodate: "✓ ", ready: "⬇︎ ", needs_image: "⚠︎ ", error: "⚠︎ " }[u.status] || "";
+  $("swStatus").textContent = icon + (u.message || (u.status === "idle" ? "Checks automatically when the Pi has internet." : ""))
+    + (u.status === "ready" && a ? ` (${date(a.ct)})` : "");
+  $("swInstall").hidden = u.status !== "ready";
+  $("swRollback").hidden = !u.can_rollback;
+  $("swCheck").disabled = ["checking", "downloading", "installing"].includes(u.status);
+  document.querySelectorAll("#swAuto button").forEach(b => b.classList.toggle("on", (b.dataset.v === "1") === !!u.auto));
+  if (document.activeElement !== $("swRepo")) $("swRepo").value = u.repo || "";
+  $("swToken").placeholder = u.token_set ? "•••••••• (saved — type to replace)" : "read-only token";
 }
 const sendJson = obj => transport && transport.sendJson && transport.sendJson(obj);
 
@@ -1508,6 +1545,19 @@ function joinWifi(ssid, psk) {
     ? `The Pi is joining “${ssid}”. Join “${ssid}” on this device too — then open mixpre.local or your control page.`
     : `The Pi is joining “${ssid}”… if it fails it goes back to its own hotspot.`, 7000);
 }
+function wireSoftware() {
+  $("swCheck").onclick = () => { sendJson({ op: "update_check" }); toast("Checking for updates…"); };
+  confirmTap($("swInstall"), () => sendJson({ op: "update_install" }));
+  confirmTap($("swRollback"), () => sendJson({ op: "update_rollback" }));
+  document.querySelectorAll("#swAuto button").forEach(b => b.onclick = () => sendJson({ op: "update_settings", auto: b.dataset.v === "1" }));
+  $("swRepoSave").onclick = () => {
+    const repo = $("swRepo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/+$/, "");
+    if (repo && !/^[\w.-]+\/[\w.-]+$/.test(repo)) return toast("Use the form owner/repo");
+    sendJson({ op: "update_settings", repo }); toast("Repo saved — checking…");
+  };
+  $("swTokenSave").onclick = () => { sendJson({ op: "update_settings", token: $("swToken").value.trim() }); $("swToken").value = ""; toast("Token saved on the Pi"); };
+  $("swNotice").onclick = () => sendJson({ op: "update_dismiss" });
+}
 function wireNet() {
   $("wifiScan").onclick = () => { sendJson({ op: "wifi_scan" }); toast("Scanning…"); };
   confirmTap($("wifiHotspot"), () => sendJson({ op: "hotspot" }));
@@ -1607,6 +1657,7 @@ buildShortcuts();
 render();
 wireNet();
 wireAudio();
+wireSoftware();
 $("verTap").addEventListener("click", verTap);
 $("aboutLine").addEventListener("click", verTap);
 if (PI_SERVED) {
