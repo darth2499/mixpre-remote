@@ -1,0 +1,10 @@
+[Unit]
+Description=Write MixPre Remote status report regularly
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

@@ -10,6 +10,13 @@ G=/sys/kernel/config/usb_gadget/mixpre
 BOOT=/boot/firmware; [ -d "$BOOT" ] || BOOT=/boot
 MODE="${1:-auto}"
 
+# Early sign of life on the SD card (mixpre-status.sh replaces it ~45 s later)
+if [ -d "$BOOT" ] && [ -w "$BOOT" ]; then
+  echo "MixPre Remote: booting since $(date '+%H:%M:%S'). If this text never changes, start-up stalled after the USB step." \
+    > "$BOOT/mixpre-status.txt" 2>/dev/null; sync
+fi
+DEBUG_CONSOLE=$(python3 -c "import json;print(1 if json.load(open('$BOOT/mixpre-remote.json')).get('debug_usb_console') else 0)" 2>/dev/null || echo 0)
+
 if [ "$MODE" = "auto" ]; then
   MODE=$(python3 -c "import json;print(json.load(open('$BOOT/mixpre-remote.json')).get('mode','both'))" 2>/dev/null || echo both)
 fi
@@ -79,6 +86,12 @@ if [ "$MODE" = "keyboard" ] || [ "$MODE" = "both" ]; then
   ln -s functions/hid.usb0 configs/c.1/
 fi
 
+if [ "$DEBUG_CONSOLE" = 1 ]; then
+  # Debug only: also appear as a serial terminal (log in from a Mac with: screen /dev/tty.usbmodem* 115200)
+  mkdir -p functions/acm.usb0
+  ln -s functions/acm.usb0 configs/c.1/
+fi
+
 UDC=$(ls /sys/class/udc 2>/dev/null | head -n1)
 if [ -z "$UDC" ]; then
   echo "No USB device controller found. Is dtoverlay=dwc2 in config.txt and are you on the Pi's USB (data) port?" >&2
@@ -86,4 +99,5 @@ if [ -z "$UDC" ]; then
 fi
 echo "$UDC" > UDC
 echo "$MODE" > /run/mixpre-gadget-mode
+[ "$DEBUG_CONSOLE" = 1 ] && systemctl --no-block start serial-getty@ttyGS0.service 2>/dev/null
 echo "USB gadget ready: $MODE on $UDC"

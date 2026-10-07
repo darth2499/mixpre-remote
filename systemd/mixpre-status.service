@@ -1,0 +1,6 @@
+[Unit]
+Description=MixPre Remote status report (mixpre-status.txt on the boot drive)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/mixpre-remote/status.sh

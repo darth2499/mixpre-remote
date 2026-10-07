@@ -63,6 +63,7 @@ DEFAULT_CONFIG = {
     "update_repo": "",            # GitHub "owner/repo" to get app updates from
     "update_token": "",           # only for private repos (read-only token)
     "update_auto": False,         # install updates at start-up before first use
+    "debug_usb_console": False,   # also show up as a serial terminal on a computer (troubleshooting)
     "mode": "both",
     "midi_channel": 1,
     "verbose_log": False,

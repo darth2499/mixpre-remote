@@ -32,6 +32,7 @@ rm -rf "$BTMP"
 rm -f "$DEST"/mixpre_remote.py "$DEST"/mixpre_net.py "$DEST"/mixpre_cloud.py "$DEST"/gadget.sh; rm -rf "$DEST/web"
 ln -sfn "$REL" "$DEST/current"
 install -m 755 "$SRC/server/mixpre_guard.py" "$DEST/guard.py"
+install -m 755 "$SRC/image/files/mixpre-status.sh" "$DEST/status.sh"
 install -m 644 "$SRC/image/SYSTEM_LEVEL" "$DEST/SYSTEM_LEVEL"
 [ -x "$DEST/venv/bin/python" ] || python3 -m venv --system-site-packages "$DEST/venv"
 DPKG_ARCH="$(dpkg --print-architecture)"
@@ -86,12 +87,13 @@ printf '[connectivity]\nuri=http://nmcheck.gnome.org/check_network_status.txt\ni
   > /etc/NetworkManager/conf.d/mixpre-connectivity.conf
 
 echo "==> Services"
-install -m 644 "$SRC"/systemd/*.service /etc/systemd/system/
+install -m 644 "$SRC"/systemd/*.service "$SRC"/systemd/*.timer /etc/systemd/system/
 [ "$IN_CHROOT" = 1 ] || systemctl daemon-reload
 systemctl disable mixpre-wifi.service 2>/dev/null || true; rm -f /etc/systemd/system/mixpre-wifi.service
 for s in mixpre-gadget mixpre-remote mixpre-net bluetooth avahi-daemon NetworkManager; do
   systemctl enable "$s.service" || echo "  (could not enable $s)"
 done
+systemctl enable mixpre-status.timer || echo "  (could not enable status report)"
 
 apt-get clean
 echo "==> MixPre Remote setup complete"
