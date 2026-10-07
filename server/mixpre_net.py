@@ -74,6 +74,8 @@ class Net:
         self.networks = []             # [{ssid, signal, secure}]
         self.message = ""
         self.lost_since = None
+        self.ap_up = False
+        self.ap_down_checks = 0
         self._fake_mode = "hotspot"
         self._fake_ssid = ""
         self._fake_saved = ["Studio WiFi"]
@@ -134,6 +136,24 @@ class Net:
                 res.append((name, vals[0].replace("\\:", ":")))
         return res
 
+    async def wait_wifi_ready(self, timeout=45):
+        """Wi-Fi starts switched off (radio kill switch) and the original Zero W is slow to
+        bring it up: unblock it and wait until NetworkManager says wlan0 is usable."""
+        if self.fake:
+            return True
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            await self.run("rfkill", "unblock", "wifi", timeout=5)
+            await self.run("nmcli", "radio", "wifi", "on", timeout=10)
+            rc, out = await self.run("nmcli", "-t", "-f", "DEVICE,STATE", "dev", timeout=10)
+            for line in out.splitlines() if rc == 0 else []:
+                dev, _, state = line.partition(":")
+                if dev == IFACE and state and not state.startswith(("unavailable", "unmanaged")):
+                    return True
+            await asyncio.sleep(2)
+        self.log("Wi-Fi: wlan0 still not ready (radio off or Wi-Fi driver not started)")
+        return False
+
     # ------------------------------------------------------------ hotspot
     def write_dnsmasq(self):
         captive = self.cfg.get("hotspot_mode", "local") == "captive"
@@ -179,12 +199,16 @@ class Net:
             await asyncio.sleep(0.3)
             self._fake_mode = "hotspot"
         else:
-            await self.run("rfkill", "unblock", "all", timeout=5)
+            await self.wait_wifi_ready()
             await self.ensure_ap_profile()
             self.write_dnsmasq()
-            rc, out = await self.run("nmcli", "--wait", "20", "con", "up", AP_CON, timeout=30)
-            if rc != 0:
-                self.log(f"Wi-Fi: hotspot failed: {out}")
+            for attempt in range(1, 5):
+                rc, out = await self.run("nmcli", "--wait", "20", "con", "up", AP_CON, timeout=30)
+                if rc == 0:
+                    break
+                self.log(f"Wi-Fi: hotspot attempt {attempt} failed: {out}")
+                await asyncio.sleep(4)
+                await self.wait_wifi_ready(timeout=20)
             await self.run("systemctl", "restart", "mixpre-dhcp.service", timeout=15)
         self.mode, self.lost_since = "hotspot", None
         await self.refresh()
@@ -331,6 +355,7 @@ class Net:
             elif k == "GENERAL.CONNECTION":
                 conn = v
         connected = state.startswith("100")
+        self.ap_up = connected and conn == AP_CON
         if self.mode != "switching":
             if connected and conn == AP_CON:
                 self.mode, self.ssid = "hotspot", self.hotspot_ssid()
@@ -364,6 +389,11 @@ class Net:
                 continue
             if self.mode == "client" and self.lost_since and time.monotonic() - self.lost_since > 45:
                 await self.start_hotspot(f"lost {self.ssid}")
+            elif self.mode == "hotspot" and not self.fake:
+                self.ap_down_checks = 0 if self.ap_up else self.ap_down_checks + 1
+                if self.ap_down_checks >= 2:      # ~20 s without a working hotspot
+                    self.ap_down_checks = 0
+                    await self.start_hotspot("hotspot wasn't running - retrying")
 
     async def boot(self):
         """At power-on: join a remembered network that's in range, else start the hotspot."""
@@ -376,6 +406,7 @@ class Net:
             if rc == 0:
                 break
             await asyncio.sleep(1)
+        await self.wait_wifi_ready()
         saved = await self.saved_networks()
         for name, _ssid in saved:   # we decide; stop NM auto-joining on its own
             await self.run("nmcli", "con", "modify", name, "connection.autoconnect", "no", timeout=10)

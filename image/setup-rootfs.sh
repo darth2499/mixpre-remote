@@ -14,7 +14,7 @@ export DEBIAN_FRONTEND=noninteractive LC_ALL=C
 echo "==> Installing packages"
 apt-get update
 apt-get install -y --no-install-recommends \
-  python3-aiohttp python3-venv python3-pip bluez avahi-daemon network-manager rfkill iw dnsmasq-base
+  python3-aiohttp python3-venv python3-pip bluez avahi-daemon network-manager wpasupplicant rfkill iw dnsmasq-base
 # WebRTC for direct connections (relay-only still works without it)
 apt-get install -y --no-install-recommends python3-aiortc || echo "  (python3-aiortc not in apt - will try pip)"
 
@@ -64,7 +64,8 @@ open(p, "w").write(json.dumps(c, indent=2))
 PY
 
 echo "==> USB device (gadget) mode"
-grep -q '^dtoverlay=dwc2' "$BOOT/config.txt" || printf '\n[all]\ndtoverlay=dwc2,dr_mode=peripheral\n' >> "$BOOT/config.txt"
+# Note: Pi OS's config.txt already has "dtoverlay=dwc2,dr_mode=host" for the CM5, so match the exact line
+grep -q '^dtoverlay=dwc2,dr_mode=peripheral' "$BOOT/config.txt" || printf '\n[all]\ndtoverlay=dwc2,dr_mode=peripheral\n' >> "$BOOT/config.txt"
 printf 'dwc2\nlibcomposite\n' > /etc/modules-load.d/mixpre-remote.conf
 
 echo "==> Hostname: mixpre  (http://mixpre.local)"
@@ -80,6 +81,10 @@ echo "==> Wi-Fi country ($COUNTRY), internet check"
 if [ -f "$BOOT/cmdline.txt" ] && ! grep -q 'ieee80211_regdom' "$BOOT/cmdline.txt"; then
   sed -i "1 s/\$/ cfg80211.ieee80211_regdom=$COUNTRY/" "$BOOT/cmdline.txt"
 fi
+# Wi-Fi starts soft-blocked until a country is set: set it and save the radio as "on"
+command -v raspi-config >/dev/null && raspi-config nonint do_wifi_country "$COUNTRY" >/dev/null 2>&1 || true
+mkdir -p /var/lib/systemd/rfkill
+for f in /var/lib/systemd/rfkill/*:wlan; do [ -e "$f" ] && echo 0 > "$f"; done
 rm -f /etc/NetworkManager/dnsmasq-shared.d/mixpre-remote.conf   # (older versions)
 # lets the Pi tell "internet ok" from "this network needs a sign-in page"
 mkdir -p /etc/NetworkManager/conf.d
