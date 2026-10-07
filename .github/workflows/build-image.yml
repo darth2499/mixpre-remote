@@ -1,5 +1,8 @@
 name: Build MixPre Remote image
 
+# Builds two SD card images in parallel and publishes both to Releases:
+#   mixpre-remote-zero2w-*.img.xz   Raspberry Pi Zero 2 W (64-bit)
+#   mixpre-remote-zero-w-*.img.xz   original Raspberry Pi Zero W (32-bit)
 # Run it from the Actions tab ("Run workflow"), or push a tag like v1.0
 on:
   workflow_dispatch:
@@ -11,8 +14,17 @@ permissions:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: zero2w
+            arch: arm64
+          - variant: zero-w
+            arch: armhf
+    name: Build ${{ matrix.variant }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -23,18 +35,44 @@ jobs:
           sudo systemctl restart systemd-binfmt || true
           ls /proc/sys/fs/binfmt_misc/
 
-      - name: Build image (about 15-25 minutes)
+      - name: Build image (about 15-40 minutes)
         run: sudo -E bash image/build-image.sh
+        env:
+          MIXPRE_ARCH: ${{ matrix.arch }}
+          MIXPRE_VARIANT: ${{ matrix.variant }}
+          MIXPRE_UPDATE_REPO: ${{ github.repository }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.variant }}
+          path: out/*
+          compression-level: 0
+          retention-days: 3
+
+  release:
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-*
+          merge-multiple: true
+          path: out
 
       - name: Publish to Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: image-${{ github.run_number }}
           name: MixPre Remote image ${{ github.run_number }}
+          fail_on_unmatched_files: false
           body: |
-            Ready-to-flash MixPre Remote image for Raspberry Pi Zero 2 W.
-            1. Download the .img.xz below.
-            2. Raspberry Pi Imager: Device = Raspberry Pi Zero 2 W, OS = Use Custom (pick this file), choose your SD card.
+            Ready-to-flash MixPre Remote SD card images. Pick the one for your board:
+            - **mixpre-remote-zero2w-….img.xz**: Raspberry Pi Zero 2 W (metal cover over the chip)
+            - **mixpre-remote-zero-w-….img.xz**: original Raspberry Pi Zero W (2017, "Zero W V1.1" printed on the board)
+
+            1. Download the right .img.xz.
+            2. Raspberry Pi Imager: Device = your board, OS = Use Custom (pick the file), choose the SD card.
             3. When Imager asks to apply OS customisation, choose NO.
             Login (SSH over the Pi's hotspot): mixpre / mixpreremote
           files: |

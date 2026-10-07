@@ -1,0 +1,30 @@
+name: Publish app update
+
+# Every push that changes the app publishes it as the "app-latest" release.
+# Pis with internet see it in Settings > Software and can install it (no reflashing).
+on:
+  workflow_dispatch:
+  push:
+    paths: ['server/**', 'web/**', 'VERSION', 'image/SYSTEM_LEVEL', 'image/make-bundle.sh', '.github/workflows/publish-update.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build update bundle
+        run: bash image/make-bundle.sh out
+
+      - name: Replace the "app-latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete app-latest --yes --cleanup-tag || true
+          gh release create app-latest out/mixpre-app.tar.gz out/manifest.json \
+            --title "App update $(cat VERSION) · $(git log -1 --format=%cd --date=format:'%b %-d %H:%M')" \
+            --notes "Installed by the Pi itself from Settings › Software. This is not an SD card image." \
+            --latest=false
